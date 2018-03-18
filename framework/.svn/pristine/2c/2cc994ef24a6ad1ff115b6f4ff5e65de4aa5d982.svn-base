@@ -1,0 +1,13 @@
+<?php
+$class_map=array (
+  'Enum' => 'core/Enum.php',
+  'control' => 'core/control.php',
+  'indexControl' => 'game_dig\\desktop/control/index.php',
+  'dig_gameClass' => 'game_dig/class/dig_game.class.php',
+  'dig_gameModel' => 'game_dig/data/model/dig_game.model.php',
+  'gameApi' => 'common/api/game.api.php',
+  'dig_oddsModel' => 'game_dig/data/model/dig_odds.model.php',
+  'dig_currencyModel' => 'game_dig/data/model/dig_currency.model.php',
+  'dig_member_propModel' => 'game_dig/data/model/dig_member_prop.model.php',
+  'execute_sqlModel' => 'execute_sql/data/model/execute_sql.model.php',
+);

@@ -1,0 +1,174 @@
+<link rel="stylesheet" type="text/css" href="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/css/home.css?v=1">
+<?php include_once(template('widget/inc_header'));?>
+<div class="wrap verify-wrap">
+  <div class="search-wrapper">
+    <input type="hidden" name="type" id="type" value="1">
+    <form action="" method="post" class="search-from search-cid" id="searchForm">
+      <span class="s-icon"><i class="aui-iconfont aui-icon-my"></i></span>
+      <input type="search" name="guid" id="guid" value="<?php echo $_GET['cid']?:$_GET['cid'];?>" placeholder="CID">
+      <span class="s-search"><i class="aui-iconfont aui-icon-search"></i></span>
+    </form >
+    <form action="" method="post" class="search-from search-phone" id="searchPhoneForm" style="display: none;">
+      <span class="s-icon"><i class="aui-iconfont aui-icon-phone"></i></span>
+      <select name="country_code" id="country_code">
+        <option value="66">+66</option>
+        <option value="84">+84</option>
+        <option value="86">+86</option>
+        <option value="855" selected>+855</option>
+      </select>
+      <i class="aui-iconfont aui-icon-down"></i>
+      <input type="search" name="phone_number" id="phone_number" placeholder="Phone Number">
+      <span class="s-search"><i class="aui-iconfont aui-icon-search"></i></span>
+    </form >
+    <div class="tip">Notice: Input phone number of login code to search customer</div>
+  </div>
+  <div class="no-search-tip">Please input the member CID or phone number search.</div>
+  <div class="no-search-member">No Member.</div>
+  <div class="verify-wrapper" style="display: none;">
+    <div class="member-info" id="memberInfo"></div>
+    <ul class="aui-list operator-list aui-margin-b-10">
+      <li class="aui-list-item operator-item" onclick="clientOperator('verify');">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Credit Verfication';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+      <li class="aui-list-item operator-item" onclick="clientOperator('addLoanRequest');">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Request For Loan';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+      <li class="aui-list-item operator-item" onclick="">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Assets Evaluate';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+      <li class="aui-list-item operator-item" onclick="">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Business Evaluate';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+      <li class="aui-list-item operator-item" onclick="">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Contracts';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+      <li class="aui-list-item operator-item" onclick="">
+        <div class="aui-list-item-label-icon icon">
+          <img src="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/image/home_registry.png" alt="" class="icon-item">
+        </div>
+        <div class="aui-list-item-inner content aui-list-item-arrow">
+          <?php echo 'Mortgage';?><span class="desc"><!--Create New Client--></span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+<script type="text/html" id="tpl_client_info">
+  {{ if( it ){ }}
+    {{ if( it.member_icon ){ }}
+      <img src="{{=it.member_icon}}" class="avatar">
+    {{ }else{ }}
+      <img src="<?php echo WAP_OPERATOR_SITE_URL.'/resource/image/default_avatar1.png'; ?>" class="avatar">
+    {{ } }}
+    <div class="main">
+      <input type="hidden" id="cid" value="{{=it.obj_guid}}">
+      <input type="hidden" id="client_uid" value="{{=it.uid}}">
+      <input type="hidden" id="client_name" value="{{=it.login_code}}">
+      <p class="name">{{=it.login_code}} ({{=it.obj_guid}})</p>  
+      <p class="phone">{{=it.phone_id}}</p>  
+      <p class="credit">Credit: 1,000</p>  
+    </div>
+  {{ } }}
+</script>
+<script src="<?php echo GLOBAL_RESOURCE_SITE_URL;?>/js/doT.min.js"></script>
+<script>
+  var back = '<?php echo $_GET['back'];?>';
+  if(back){
+    $('#header .back').attr('onclick', "javascript:location.href='<?php echo getUrl('home', 'index', array(), false, WAP_OPERATOR_SITE_URL)?>'");
+  }
+  window.onload = function(){
+    if($('#guid').val()) 
+      $('.s-search').click();
+  }
+  $('.s-search').on('click', function(){
+    if($('.search-cid').css('display') == 'block'){
+      $('#searchForm').submit();
+    }
+  });
+  
+  $('.s-icon').on('click', function(){
+    $('.search-cid').toggle();
+    $('.search-phone').toggle();
+    var type = $('#type').val() == 1 ? 2 : 1;
+    $('#type').val(type);
+  });
+  $('#searchForm,#searchPhoneForm').on('submit', function(event){
+    //拦截表单默认提交事件
+     event.preventDefault();
+    //获取input框的值，用ajax提交到后台
+    var param = {}, reg = new RegExp('^[0-9]*$'), type = $('#type').val(), guid = $('#guid').val(), 
+        country_code = $('#country_code').val(), phone_number = $('#phone_number').val();
+        param.type = type;
+    if(type == 1){
+      if(!guid){
+        verifyFail('Please input member cid');
+      }
+      if(!reg.test(guid)){
+        verifyFail('请输入数字!');
+      }
+      param.guid = guid;
+    }else if(type == 2){
+      if(!reg.test(phone_number)){
+        verifyFail('请输入数字!');
+      }
+      param.country_code = country_code;
+      param.phone_number = phone_number;
+    }else{
+      return;
+    }
+    toast.loading({
+    title: '<?php echo $lang['label_loading'];?>'
+  });
+    $.ajax({
+      url: '<?php echo WAP_OPERATOR_SITE_URL;?>/index.php?act=home&op=searchClient',
+      type: 'post',
+      data: param,
+      dataType: 'json',
+      success: function(ret){
+        toast.hide();
+        if(ret.STS){
+          $('.verify-wrapper').show();
+          data = ret.DATA;
+          $('.no-search-tip').hide();
+          $('.no-search-member').hide();
+          var interText = doT.template($('#tpl_client_info').text());
+          $('#memberInfo').html(interText(data));
+        }else{
+          $('.verify-wrapper').hide();
+          $('.no-search-tip').hide();
+          $('.no-search-member').show();
+        }
+      }
+    });
+  });
+  function clientOperator(op){
+    var cid = $('#cid').val(),client_uid = $('#client_uid').val(), client_name = $('#client_name').val();
+    window.location.href = '<?php echo WAP_OPERATOR_SITE_URL;?>/index.php?act=home&op='+op+'&cid='+cid+'&id='+client_uid+'&name='+client_name;
+
+  }
+</script>

@@ -1,0 +1,14 @@
+<?php
+
+class memberWithdrawToCashTradingClass extends clientWithdrawToCashTradingClass {
+    public function __construct($memberId, $clientUserId, $amount, $currency)
+    {
+        $member_passbook = passbookClass::getOrCreatePassbookByObjGuid(memberClass::getInstanceByID($memberId)->getSavingsGUID()
+            , array(
+                'book_type' => 'debt',          // 储蓄账户是负债类
+                'obj_type' => 'client_member'
+            )
+        );
+        parent::__construct($member_passbook, $clientUserId, $amount, $currency);
+    }
+}

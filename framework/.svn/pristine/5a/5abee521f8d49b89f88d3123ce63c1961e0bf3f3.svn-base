@@ -1,0 +1,71 @@
+<div>
+    <table class="table">
+        <thead>
+        <tr class="table-header">
+            <td><?php echo 'Category';?></td>
+            <td><?php echo 'Item Name';?></td>
+            <td><?php echo 'Item Code';?></td>
+            <td><?php echo 'Item Description';?></td>
+            <td><?php echo 'Item Value';?></td>
+            <td colspan="2"><?php echo 'Function';?></td>
+        </tr>
+        </thead>
+        <tbody class="table-body">
+        <?php $i == 0;foreach ($data['data'] as $key => $rows) {++$i;$count = count($rows);$row = array_shift($rows);?>
+            <tr class="<?php echo $i % 2 == 1 ? "tr_odd" : ""?>">
+                <td rowspan="<?php echo $count?>">
+                    <?php echo $key ?><br/>
+                </td>
+                <td><?php echo $row['item_name'];?></td>
+                <td><?php echo $row['item_code'];?></td>
+                <td><?php echo $row['item_desc'];?></td>
+                <td><?php echo $row['item_value']>0?$row['item_value']:'';?></td>
+                <td>
+                    <a title="" href="<?php echo getUrl('setting', 'editShotCodeValue', array('uid'=>$row['uid']), false, BACK_OFFICE_SITE_URL . '/index.php')?>" style="margin-right: 5px" >
+                        <i class="fa fa-edit"></i>
+                        Edit
+                    </a>
+                    <a title="" href="<?php echo getUrl('setting', 'deleteShotCodeValue', array('uid'=>$row['uid']), false, BACK_OFFICE_SITE_URL . '/index.php')?>" >
+                        <i class="fa fa-trash"></i>
+                        Delete
+                    </a>
+                </td>
+                <td rowspan="<?php echo $count?>">
+                    <a title="" href="<?php echo getUrl('setting', 'addShotCodeValue', array('category'=>$key), false, BACK_OFFICE_SITE_URL . '/index.php')?>" style="margin-right: 5px" >
+                        <i class="fa fa-plus"></i>
+                        Add Value
+                    </a>
+                    <a title="<?php echo $lang['common_edit'] ;?>" href="<?php echo getUrl('setting', 'editShotCodeCategory', array('category'=>$key), false, BACK_OFFICE_SITE_URL . '/index.php')?>" style="margin-right: 5px" >
+                        <i class="fa fa-edit"></i>
+                        Edit
+                    </a>
+                    <a title="<?php echo $lang['common_delete'];?>" href="<?php echo getUrl('setting', 'deleteShotCode', array('category'=>$key), false, BACK_OFFICE_SITE_URL . '/index.php')?>" >
+                        <i class="fa fa-trash"></i>
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            <?php foreach ($rows as $row) { ?>
+                <tr class="<?php echo $i % 2 == 1 ? "tr_odd" : ""?>">
+                    <td><?php echo $row['item_name']; ?></td>
+                    <td><?php echo $row['item_code']; ?></td>
+                    <td><?php echo $row['item_desc']; ?></td>
+                    <td><?php echo $row['item_value']>0?$row['item_value']:''; ?></td>
+                    <td>
+                        <a title="" href="<?php echo getUrl('setting', 'editShotCodeValue', array('uid'=>$row['uid']), false, BACK_OFFICE_SITE_URL . '/index.php')?>" style="margin-right: 5px" >
+                            <i class="fa fa-edit"></i>
+                            Edit
+                        </a>
+                        <a title="" href="<?php echo getUrl('setting', 'deleteShotCodeValue', array('uid'=>$row['uid']), false, BACK_OFFICE_SITE_URL . '/index.php')?>" >
+                            <i class="fa fa-trash"></i>
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            <?php } ?>
+        <?php }?>
+        </tbody>
+    </table>
+</div>
+<?php include_once(template("widget/inc_content_pager"));?>
+

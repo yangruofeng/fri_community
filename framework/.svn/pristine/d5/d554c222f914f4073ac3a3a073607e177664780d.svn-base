@@ -1,0 +1,76 @@
+<?php
+
+class entry_baseControl extends control
+{
+    public $user_id;
+    public $user_name;
+    public $user_info;
+    public $auth_list;
+
+    function __construct()
+    {
+        parent::__construct();
+        Language::read('auth');
+//        $user = userBase::Current();
+//        $user_info = $user->property->toArray();
+//        $this->user_info = $user_info;
+//        $this->user_id = $user_info['uid'];
+//        $this->user_name = $user_info['user_code'];
+//
+//        $this->auth_list = $user->getAuthList();
+    }
+
+    /**
+     * 根据权限获取menu
+     * @return array
+     */
+    protected function getResetMenu()
+    {
+        $index_menu = $this->getIndexMenu();
+//        foreach ($index_menu as $key => $menu) {
+//            foreach ($menu['child'] as $k => $child) {
+//                $argc = explode(',', $child['args']);
+//                $auth = $argc[1] . '_' . $argc[2];
+//                if (!in_array($auth, $this->auth_list)) {
+//                    unset($index_menu[$key]['child'][$k]);
+//                }
+//            }
+//            if (empty($index_menu[$key]['child'])) {
+//                unset($index_menu[$key]);
+//            }
+//        }
+        return $index_menu;
+    }
+
+    /**
+     * 定义menu
+     * @return array
+     */
+    private function getIndexMenu()
+    {
+        $indexMenu = array(
+            'member' => array(
+                "title" => "Member",
+                'args' =>  'microbank/counter,member,register'
+            ),
+            'company' => array(
+                "title" => "Company",
+                'args' => 'microbank/counter,company,index'
+            ),
+            'service' => array(
+                "title" => "Service",
+                'args' => 'microbank/counter,service,index'
+            ),
+            'cash_on_hand' => array(
+                "title" => "Cash On Hand",
+                'args' => 'microbank/counter,cash,cashOnHand'
+            ),
+            'cash_in_vault' => array(
+                "title" => "Cash In Vault",
+                'args' => 'microbank/counter,cash,cashInVault'
+            ),
+        );
+        return $indexMenu;
+    }
+
+}

@@ -1,0 +1,64 @@
+<div>
+    <table class="table">
+        <thead>
+        <tr class="table-header">
+            <td><?php echo 'ID';?></td>
+            <td><?php echo 'Name';?></td>
+            <td><?php echo 'Credit';?></td>
+            <td><?php echo 'Multi Contract';?></td>
+            <td><?php echo 'Type';?></td>
+            <td><?php echo 'Update Time';?></td>
+            <td><?php echo 'Function';?></td>
+        </tr>
+        </thead>
+        <tbody class="table-body">
+        <?php foreach($data['data'] as $row){?>
+            <tr>
+              <td>
+                  <?php echo $row['uid'] ?><br/>
+              </td>
+              <td>
+                  <?php echo $row['display_name'] ?><br/>
+              </td>
+              <td>
+                  <?php echo $row['credit'] ?><br/>
+              </td>
+              <td>
+                  <?php if($row['allow_multi_contract']){echo 'allow';}else{echo '/';} ?><br/>
+              </td>
+              <td>
+                  <?php switch ($row['account_type']) {
+                    case 0:
+                      echo 'member';
+                      break;
+                    case 10:
+                      echo 'partner';
+                      break;
+                    case 20:
+                      echo 'dealer';
+                      break;
+                    case 30:
+                      echo '法人';
+                      break;
+                    default:
+                      echo 'member';
+                      break;
+                  }  ?><br/>
+              </td>
+              <td>
+                  <?php echo $row['update_time'] ?><br/>
+              </td>
+              <td>
+                  <div class="custom-btn-group">
+                    <a title="<?php echo $lang['common_delete'];?>" class="custom-btn custom-btn-primary" href="<?php echo getUrl('loan', 'editCredit', array('uid'=>$row['uid']), false, BACK_OFFICE_SITE_URL . '/index.php')?>" >
+                        <span><i class="fa fa-send-o"></i>授信</span>
+                    </a>
+                </div>
+              </td>
+            </tr>
+        <?php }?>
+        </tbody>
+    </table>
+</div>
+<hr>
+<?php include_once(template("widget/inc_content_pager"));?>

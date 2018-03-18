@@ -1,0 +1,33 @@
+/* credit */
+.credit-wrap {
+  margin-bottom: 3rem;
+}
+.client-top-wrapper {
+  background: #cc0000;
+  padding: 1.2rem 0 1rem;
+  text-align: center;
+}
+.client-top-wrapper .count {
+  display: inline-block;
+  width: 5rem;
+  height: 4rem;
+  line-height: 4rem;
+  background: #fff;
+  font-size: 3rem;
+  color: #cc0000;
+  border-radius: 10px;
+}
+.client-top-wrapper .label {
+  color: #fff;
+  margin-top: .3rem;
+}
+.client-data-wrapper .color999 {
+  color: #999;
+  font-size: .6rem;
+}
+.client-data-wrapper .colorcc0000 {
+  color: #cc0000;
+}
+.client-data-wrapper .type {
+  color: #000;
+}

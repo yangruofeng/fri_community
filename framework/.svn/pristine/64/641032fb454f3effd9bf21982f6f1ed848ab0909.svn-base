@@ -1,0 +1,73 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: sahara
+ * Date: 2018/3/13
+ * Time: 10:14
+ */
+
+/** 储蓄账户操作类
+ * Class savingsControl
+ */
+class savingsControl extends bank_apiControl
+{
+
+    public function requestWithdrawOp()
+    {
+
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge($_GET,$_POST);
+        $member_id = $params['member_id'];
+        $amount = round($params['amount'],2);
+        $currency = $params['currency'];
+        $handler_id = $params['handler_id'];
+        $trading_password = $params['trading_password'];
+        $remark = $params['remark'];
+        if( !$member_id || $amount<=0 || !$currency ||  !$handler_id ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $m_member = new memberModel();
+        $member = $m_member->getRow($member_id);
+        if( !$member ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $m_handler = new member_account_handlerModel();
+        $handler = $m_handler->getRow($handler_id);
+        if( !$handler ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $memberObject = new objectMemberClass($member_id);
+        $re = $memberObject->savingsRequestWithdraw($amount,$currency,$handler_id,$remark,$trading_password);
+        return $re;
+
+    }
+
+    public function requestDepositOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge($_GET,$_POST);
+        $member_id = $params['member_id'];
+        $amount = round($params['amount'],2);
+        $currency = $params['currency'];
+        $handler_id = $params['handler_id'];
+        $remark = $params['remark'];
+        if( !$member_id || $amount<=0 || !$currency ||  !$handler_id ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $m_member = new memberModel();
+        $member = $m_member->getRow($member_id);
+        if( !$member ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $memberObject = new objectMemberClass($member_id);
+        $re = $memberObject->savingsRequestDeposit($amount,$currency,$handler_id,$remark);
+        return $re;
+    }
+
+}

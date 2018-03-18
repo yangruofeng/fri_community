@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: Seven
+ * Date: 2017/11/7
+ * Time: 9:35
+ */
+class loan_credit_release extends baseControl
+{
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * 获取role信息
+     * @param $uid
+     * @return result
+     */
+    public function getCreditReleaseInfo($obj_guid)
+    {
+        $model = M('loan_credit_release');
+        $info = $model->find(array('obj_guid' => $obj_guid));
+        if (empty($info)) {
+            return new result(false, 'Invalid Item');
+        }
+        return new result(true, '', $info);
+    }
+
+}

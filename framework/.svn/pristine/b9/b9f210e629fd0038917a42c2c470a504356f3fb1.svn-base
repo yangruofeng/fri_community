@@ -1,0 +1,198 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: tim
+ * Date: 5/31/2015
+ * Time: 1:15 AM
+ */
+class core_definitionModel extends tableModelBase
+{
+    public function  __construct()
+    {
+        parent::__construct('core_definition');
+    }
+
+    /**
+     * 添加分类
+     * @param $p
+     * @return result
+     */
+    public function addCategory($p)
+    {
+        $category = trim($p['category']);
+        if (empty($category)) {
+            return new result(false, 'Category cannot be empty!');
+        }
+        $chk_category = $this->find(array('category' => $category));
+        if ($chk_category) {
+            return new result(false, 'Category exists!');
+        }
+        $row = $this->newRow();
+        $row->category = $category;
+        $rt = $row->insert();
+        if ($rt->STS) {
+            return new result(true, 'Add successful!');
+        } else {
+            return new result(false, 'Add failed--' . $rt->MSG);
+        }
+    }
+
+    /**
+     * 修改分类
+     * @param $p
+     * @return result
+     */
+    public function editCategory($p)
+    {
+        $category_key = trim($p['category_key']);
+        $category = trim($p['category']);
+        if (empty($category)) {
+            return new result(false, 'Category cannot be empty!');
+        }
+
+        if ($category == $category_key) {
+            return new result(false, 'No Change!');
+        }
+
+        $chk_category = $this->find(array('category' => $category));
+        if ($chk_category) {
+            return new result(false, 'Category exists!');
+        }
+
+        $sql = "UPDATE core_definition SET category = '" . $category . "' WHERE category = '" . $category_key . "'";
+        $rt = $this->conn->execute($sql);
+        if ($rt->STS) {
+            return new result(true, 'Edit successful!');
+        } else {
+            return new result(false, 'Edit failed--' . $rt->MSG);
+        }
+    }
+
+    /**
+     * 删除
+     * @param $category
+     * @return result
+     */
+    public function deleteDefinitionByCategory($category)
+    {
+        $category = trim($category);
+        $rt = $this->delete(array('category' => $category));
+        if ($rt->STS) {
+            return new result(true, 'Delete successful!');
+        } else {
+            return new result(false, 'Delete failed--' . $rt->MSG);
+        }
+    }
+
+    /**
+     * 添加Definition
+     * @param $p
+     * @return result
+     */
+    public function addDefinition($p)
+    {
+        $category = trim($p['category']);
+        $item_name = trim($p['item_name']);
+        $item_code = trim($p['item_code']);
+        $item_desc = trim($p['item_desc']);
+        $item_value = round($p['item_value'], 2);
+        if (empty($category)) {
+            return new result(false, 'Category Required!');
+        }
+        if (empty($item_name)) {
+            return new result(false, 'Item name cannot be empty!');
+        }
+        if (empty($item_code)) {
+            return new result(false, 'Item code cannot be empty!');
+        }
+        $chk_code = $this->find(array('category' => $category, 'item_code' => $item_code));
+        if ($chk_code) {
+            return new result(false, 'Code exists!');
+        }
+        $row = $this->getRow(array('category' => $category));
+        if ($row->item_code) {
+            $row = $this->newRow();
+            $row->category = $category;
+            $row->item_name = $item_name;
+            $row->item_code = $item_code;
+            $row->item_desc = $item_desc;
+            $row->item_value = $item_value;
+            $rt = $row->insert();
+        }else{
+            $row->item_name = $item_name;
+            $row->item_code = $item_code;
+            $row->item_desc = $item_desc;
+            $row->item_value = $item_value;
+            $rt = $row->update();
+        }
+
+        if ($rt->STS) {
+            return new result(true, 'Add successful!');
+        } else {
+            return new result(false, 'Add failed--' . $rt->MSG);
+        }
+
+    }
+
+    /**
+     * 编辑Definition
+     * @param $p
+     * @return result
+     * @throws Exception
+     */
+    public function editDefinition($p)
+    {
+        $uid = intval($p['uid']);
+        $item_name = trim($p['item_name']);
+        $item_code = trim($p['item_code']);
+        $item_desc = trim($p['item_desc']);
+        $item_value = round($p['item_value'], 2);
+        if (empty($item_name)) {
+            return new result(false, 'Item name cannot be empty!');
+        }
+        if (empty($item_code)) {
+            return new result(false, 'Item code cannot be empty!');
+        }
+        $chk_code = $this->find(array('uid' => array('neq', $uid), 'item_code' => $item_code));
+        if ($chk_code) {
+            return new result(false, 'Code exists!');
+        }
+        $row = $this->getRow(array('uid' => $uid));
+        if ($row->item_name == $item_name && $row->item_code == $item_code && $row->item_desc == $item_desc && $row->item_value == $item_value) {
+            return new result(false, 'No Change!');
+        }
+        $row->item_name = $item_name;
+        $row->item_code = $item_code;
+        $row->item_desc = $item_desc;
+        $row->item_value = $item_value;
+        $rt = $row->update();
+        if ($rt->STS) {
+            return new result(true, 'Edit successful!');
+        } else {
+            return new result(false, 'Edit failed--' . $rt->MSG);
+        }
+
+    }
+
+    /**
+     * 删除Definition
+     * @param $uid
+     * @return result
+     * @throws Exception
+     */
+    public function deleteDefinition($uid)
+    {
+        $uid = intval($uid);
+        $row = $this->getRow(array('uid' => $uid));
+        if (!$row) {
+            return new result(false, 'Invalid Id');
+        }
+        $rt = $row->delete();
+        if ($rt->STS) {
+            return new result(true, 'Delete successful!');
+        } else {
+            return new result(false, 'Delete failed--' . $rt->MSG);
+        }
+    }
+}

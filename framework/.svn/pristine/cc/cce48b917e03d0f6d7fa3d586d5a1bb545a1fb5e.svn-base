@@ -1,0 +1,268 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: sahara
+ * Date: 2017/12/13
+ * Time: 10:17
+ */
+class loan_commonControl extends bank_apiControl
+{
+
+    public function newCalculatorOp()
+    {
+
+        $params = array_merge(array(),$_GET,$_POST);
+        $loan_amount = $params['loan_amount'];
+        $loan_period = $params['loan_period'];
+        $loan_period_unit = $params['loan_period_unit'];
+        $repayment_type = $params['repayment_type'];
+        $repayment_period = $params['repayment_period'];
+        if( $loan_amount < 1 ){
+            return new result(false,'Invalid amount',null,errorCodesEnum::INVALID_PARAM);
+        }
+        if( $loan_period <= 0 ){
+            return new result(false,'Invalid loan period',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $re = (new loan_baseClass())->calculator($loan_amount,$loan_period,$loan_period_unit,$repayment_type,$repayment_period);
+        return $re;
+    }
+
+    public function contractDetailOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $contract_id = $params['contract_id'];
+        $re = loan_contractClass::getLoanContractDetailInfo($contract_id);
+        return $re;
+    }
+
+    public function appLoanApplyOp()
+    {
+        $params = array_merge(array(),$_GET,$_POST);
+        $member_id = intval($params['member_id']);
+
+        $amount = round($params['amount'],2);
+        $propose = $params['loan_propose'];
+        $loan_time = intval($params['loan_time']);
+        $loan_time_unit = $params['loan_time_unit'];
+        $mortgage = $params['mortgage'];  // 多个用,隔开
+        $currency = $params['currency']?:currencyEnum::USD;
+
+        if( $amount <= 0 ){
+            return new result(false,'Invalid amount',null,errorCodesEnum::INVALID_PARAM);
+        }
+
+        // 登陆会员
+        if( $member_id ){
+            $m_member = new memberModel();
+            $member = $m_member->getRow($member_id);
+            if( !$member ){
+                return new result(false,'No member',null,errorCodesEnum::MEMBER_NOT_EXIST);
+            }
+
+            $applicant_name = $member->display_name?:($member->login_code?:'Unknown');
+            $applicant_address = null;  // member 地址
+            $contact_phone = $member->phone_id;
+
+        }else{
+            // 没登陆
+            $applicant_name = $params['name'];
+            $applicant_address = $params['address'];
+            $country_code = $params['country_code'];
+            $phone = $params['phone'];
+            $sms_id = $params['sms_id'];
+            $sms_code = $params['sms_code'];
+            if( !$applicant_name || !$applicant_address || !$country_code || !$phone || !$sms_id || !$sms_code ){
+                return new result(false,'Lack param',null,errorCodesEnum::DATA_LACK);
+            }
+            $phone_arr = tools::getFormatPhone($country_code,$phone);
+            $contact_phone = $phone_arr['contact_phone'];
+            if( !isPhoneNumber($contact_phone) ){
+                return new result(false,'Invalid phone',null,errorCodesEnum::INVALID_PHONE_NUMBER);
+            }
+            // 验证码
+            $m_sms = new phone_verify_codeModel();
+            $row = $m_sms->getRow(array(
+                'uid' => $sms_id,
+                'verify_code' => $sms_code
+            ));
+            if( !$row ){
+                return new result(false,'Code error',null,errorCodesEnum::SMS_CODE_ERROR);
+            }
+
+        }
+
+        $m_apply = new loan_applyModel();
+
+        $apply = $m_apply->newRow();
+        $apply->member_id = $member_id;
+        $apply->applicant_name = $applicant_name;
+        $apply->applicant_address = $applicant_address;
+        $apply->apply_amount = $amount;
+        $apply->currency = $currency;
+        $apply->loan_time = $loan_time;
+        $apply->loan_time_unit = $loan_time_unit;
+        $apply->mortgage = $mortgage;
+        $apply->loan_propose = $propose;
+        $apply->contact_phone = $contact_phone;
+        $apply->apply_time = Now();
+        $apply->request_source = loanApplySourceEnum::MEMBER_APP;
+        $insert = $apply->insert();
+        if( !$insert->STS ){
+            return new result(false,'Apply fail',null,errorCodesEnum::DB_ERROR);
+        }
+
+        return new result(true,'success',$apply);
+
+    }
+
+    public function contractCancelOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $contract_id = $params['contract_id'];
+        $re = loan_baseClass::cancelContract($contract_id);
+        return $re;
+    }
+
+    public function repaymentApplyOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $re = loan_contractClass::repaymentApply($params);
+        return $re;
+    }
+
+
+    public function getContractPayableInfoOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $contract_id = $params['contract_id'];
+        if( $contract_id <= 0 ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $re = loan_contractClass::getContractLeftPayableInfo($contract_id);
+        return $re;
+    }
+
+
+    public function calculateContractPayOffDetailOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $contract_id = $params['contract_id'];
+        if( $contract_id <= 0 ){
+            return new result(false,'Invalid param',null,errorCodesEnum::INVALID_PARAM);
+        }
+        $re = loan_contractClass::calculateContractPayOffAmount($contract_id);
+        return $re;
+    }
+
+    public function prepaymentPreviewOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $re = loan_contractClass::prepaymentPreview($params);
+
+        return $re;
+    }
+
+    public function prepaymentApplyOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $re = loan_contractClass::prepaymentApply($params);
+        return $re;
+    }
+
+    public function prepaymentAddPaymentInfoOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $re = loan_contractClass::prepaymentAddPaymentInfo($params);
+        return $re;
+    }
+
+
+    public function getPrepaymentDetailOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $contract_id = $params['contract_id'];
+        $re = loan_contractClass::getPrepaymentDetail($contract_id);
+        if( !$re->STS ){
+            return $re;
+        }
+        $data_return  = $re->DATA;
+
+        $data = array(
+            'total_overdue_amount' => $data_return['total_overdue_amount'],
+            'next_repayment_date' => $data_return['next_repayment_date'],
+            'next_repayment_amount' => $data_return['next_repayment_amount'],
+            'total_left_principal' => $data_return['total_left_principal'],
+        );
+
+        // 查询是否有申请
+        $request = loan_contractClass::getContractPrepaymentRequest($contract_id);
+        $data['last_prepayment_request'] = $request;
+        return new result(true,'success',$data);
+
+    }
+
+    public function getSchemaRepaymentDetailOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $schema_id = $params['schema_id'];
+        $list = loan_contractClass::getSchemaRepaymentDetail($schema_id);
+
+        return new result(true,'success',$list);
+    }
+
+
+    public function getSchemaDisbursementDetailOp()
+    {
+        $re = $this->checkToken();
+        if( !$re->STS ){
+            return $re;
+        }
+        $params = array_merge(array(),$_GET,$_POST);
+        $schema_id = $params['schema_id'];
+        $list = loan_contractClass::getSchemaDisbursementDetail($schema_id);
+
+        return new result(true,'success',$list);
+    }
+
+
+}

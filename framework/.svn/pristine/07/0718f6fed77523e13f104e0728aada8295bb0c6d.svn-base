@@ -1,0 +1,182 @@
+<?php
+
+class regionControl extends baseControl
+{
+    public function __construct()
+    {
+        parent::__construct();
+        Tpl::setLayout("empty_layout");
+        Tpl::output("html_title", "Region List");
+        Tpl::setDir("region");
+    }
+
+    /**
+     * region list
+     */
+    public function listOp()
+    {
+        $m_core_tree = M('core_tree');
+        $region_tree = $m_core_tree->getTree('region');
+        Tpl::output('region_tree', $this->procHtml($region_tree));
+        Tpl::showPage("region.list");
+    }
+
+    /**
+     * 添加地址
+     */
+    public function addOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        $m_core_tree = M('core_tree');
+        if ($p['form_submit'] == 'ok') {
+            $lang_list = $this->getLangWithoutDefault();
+            $text_alias = array('en' => trim($p['region_text']));
+            foreach ($lang_list as $key => $lang) {
+                $text_alias[$key] = trim($p[$key]);
+            }
+            $param = array(
+                'root_key' => 'region',
+                'node_text' => trim($p['region_text']),
+                'node_text_alias' => my_json_encode($text_alias),
+                'pid' => intval($p['pid']),
+                'is_leaf' => intval($p['is_leaf']),
+                'node_sort' => intval($p['node_sort']),
+            );
+            $rt = $m_core_tree->addNode($param);
+
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('region', 'list', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                unset($p['form_submit']);
+                showMessage($rt->MSG, getUrl('region', 'add', $p, false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+        } else {
+            $region_tree = $m_core_tree->getTree('region', 0);
+            Tpl::output('region_tree', $this->procHtml($region_tree, 'option'));
+            Tpl::output('pid', intval($p['pid']) ?: 0);
+            Tpl::output("lang_list", $this->getLangWithoutDefault());
+            Tpl::showPage("region.add");
+        }
+    }
+
+    /**
+     * 修改地址
+     */
+    public function editOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        $m_core_tree = M('core_tree');
+        if ($p['form_submit'] == 'ok') {
+            $lang_list = $this->getLangWithoutDefault();
+            $text_alias = array('en' => trim($p['region_text']));
+            foreach ($lang_list as $key => $lang) {
+                $text_alias[$key] = trim($p[$key]);
+            }
+            $param = array(
+                'uid' => intval($p['uid']),
+                'root_key' => 'region',
+                'node_text' => trim($p['region_text']),
+                'node_text_alias' => my_json_encode($text_alias),
+                'is_leaf' => intval($p['is_leaf']),
+                'node_sort' => intval($p['node_sort']),
+            );
+            $rt = $m_core_tree->editNode($param);
+
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('region', 'list', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                showMessage($rt->MSG);
+            }
+        } else {
+            $uid = intval($p['uid']);
+            $region_row = $m_core_tree->find(array('uid' => $uid));
+            if (empty($region_row)) {
+                showMessage('Invalid Id');
+            }
+            if ($region_row['pid']) {
+                $region_parent = $m_core_tree->find(array('uid' => $region_row['pid']));
+                $region_row['parent'] = $region_parent['node_text'];
+            } else {
+                $region_row['parent'] = 'Top-level';
+            }
+
+            $is_parent = $m_core_tree->find(array('pid' => $region_row['uid']));
+            if ($is_parent) {
+                $region_row['is_parent'] = 1;
+            } else {
+                $region_row['is_parent'] = 0;
+            }
+
+            Tpl::output('region_row', $region_row);
+            Tpl::output("lang_list", $this->getLangWithoutDefault());
+            Tpl::showPage("region.edit");
+        }
+    }
+
+    /**
+     * 删除地址
+     */
+    public function deleteOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        $m_core_tree = M('core_tree');
+        $param = array(
+            'uid' => intval($p['uid']),
+            'root_key' => 'region',
+        );
+        $rt = $m_core_tree->deleteNode($param);
+        showMessage($rt->MSG);
+    }
+
+    /**
+     * 生成tree html
+     * @param $tree
+     * @param string $type
+     * @return string
+     */
+    private function procHtml($tree, $type = 'ul')
+    {
+        $html = '';
+        if ($type == 'option') {
+            foreach ($tree as $t) {
+                $html .= "<option value='{$t['uid']}'>";
+                for ($i = 0; $i < $t['node_level']; ++$i) {
+                    $html .= "&nbsp;&nbsp;&nbsp;";
+                }
+                $html .= "{$t['node_text']}</option>";
+                if ($t['child']) {
+                    $html .= $this->procHtml($t['child'], 'option');
+                }
+            }
+        } else {
+            foreach ($tree as $t) {
+                if (empty($t['child'])) {
+                    $html .= '<li class="list-group-item"><div class="input-group">';
+                    $html .= '<input type="text" class="form-control" readonly value="' . $t['node_text'] . '">';
+                    $html .= '<span class="input-group-btn">';
+                    $html .= '<a class="btn btn-default" title="Delete" href="' . getUrl('region', 'delete', array('uid' => $t['uid']), false, BACK_OFFICE_SITE_URL . '/index.php') . '"><i class="fa fa-trash"></i></a>';
+                    $html .= '<a class="btn btn-default" title="Edit" href="' . getUrl('region', 'edit', array('uid' => $t['uid']), false, BACK_OFFICE_SITE_URL . '/index.php') . '"><i class="fa fa-edit"></i></a>';
+                    if ($t['is_leaf'] != 1) {
+                        $html .= '<a class="btn btn-default" title="Add" href="' . getUrl('region', 'add', array('pid' => $t['uid']), false, BACK_OFFICE_SITE_URL . '/index.php') . '"><i class="fa fa-plus"></i></a>';
+                    }
+                    $html .= '</span></div></li>';
+                } else {
+                    $html .= '<li class="list-group-item">';
+                    $html .= '<div class="input-group">';
+                    $html .= '<span class="input-group-btn up-away btn-away"><a class="btn btn-default" href="#"><i class="fa fa-chevron-circle-right"></i></a></span>';
+                    $html .= '<input type="text" class="form-control" readonly value="' . $t['node_text'] . '">';
+                    $html .= '<span class="input-group-btn">';
+                    $html .= '<a class="btn btn-default" title="Edit" href="' . getUrl('region', 'edit', array('uid' => $t['uid']), false, BACK_OFFICE_SITE_URL . '/index.php') . '"><i class="fa fa-edit"></i></a>';
+                    if ($t['is_leaf'] != 1) {
+                        $html .= '<a class="btn btn-default" title="Add" href="' . getUrl('region', 'add', array('pid' => $t['uid']), false, BACK_OFFICE_SITE_URL . '/index.php') . '"><i class="fa fa-plus"></i></a>';
+                    }
+                    $html .= '</span></div>';
+                    $html .= '<ul class="list-group" style="padding-left: 50px;margin-bottom: 10px;display: none">';
+                    $html .= $this->procHtml($t['child']);
+                    $html .= "</ul></li>";
+                }
+            }
+        }
+        return $html;
+    }
+}
