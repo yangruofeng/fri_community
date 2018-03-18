@@ -1,0 +1,22 @@
+<link rel="stylesheet" type="text/css" href="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/css/inc_footer.css?v=1">
+<footer class="bottom-footer" id="footer">
+  <ul class="footer-nav clearfix">
+    <li class="home <?php if($output['nav_footer'] == 'home'){echo 'active';}?>"
+      onclick="<?php if($output['nav_footer'] == 'home'){echo 'javascript:;';}else{?>javascript:location.href='<?php echo getUrl('home', 'index', array(), false, WAP_OPERATOR_SITE_URL)?>'<?php }?>">
+      <p></p>
+      <span><?php echo 'Home';?></span>
+    </li>
+    <li class="request <?php if($output['nav_footer'] == 'request'){echo 'active';}?>" onclick="<?php if($output['nav_footer'] == 'request'){echo 'javascript:;';}else{?>javascript:location.href='<?php echo getUrl('request', 'index', array(), false, WAP_OPERATOR_SITE_URL)?>'<?php }?>">
+      <p></p>
+      <span><?php echo 'Request';?></span>
+    </li>
+    <li class="client <?php if($output['nav_footer'] == 'client'){echo 'active';}?>" onclick="<?php if($output['nav_footer'] == 'client'){echo 'javascript:;';}else{?>javascript:location.href='<?php echo getUrl('client', 'index', array(), false, WAP_OPERATOR_SITE_URL)?>'<?php }?>">
+      <p></p>
+      <span><?php echo 'Client';?></span>
+    </li>
+    <li class="account <?php if($output['nav_footer'] == 'account'){echo 'active';}?>" onclick="<?php if($output['nav_footer'] == 'account'){echo 'javascript:;';}else{?>javascript:location.href='<?php echo getUrl('member', 'index', array(), false, WAP_OPERATOR_SITE_URL)?>'<?php }?>">
+      <p></p>
+      <span><?php echo 'Account';?></span>
+    </li>
+  </ul>
+</footer>

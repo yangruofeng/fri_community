@@ -1,0 +1,39 @@
+<link rel="stylesheet" type="text/css" href="<?php echo WAP_OPERATOR_SITE_URL;?>/resource/css/client.css?v=1">
+<?php include_once(template('widget/inc_simple_header'));?>
+<?php $list = $output['list'];?>
+<div class="wrap client-wrap">
+  <div class="client-top-wrapper">
+    <div class="count"><?php echo count($list);?></div>
+    <div class="label">Customer Quantity</div>
+  </div>
+  <div class="client-data-wrapper aui-margin-t-10">
+    
+    <?php if(count($list) > 0){ ?>
+      <ul class="aui-list aui-media-list cash-list flow-list">
+        <?php foreach($list as $val){ ?>
+        <li class="aui-list-item aui-list-item-middle" onclick="javascript:location.href='<?php echo getUrl('home', 'search', array('cid'=>$val['obj_guid']), false, WAP_OPERATOR_SITE_URL)?>'">
+          <div class="aui-media-list-item-inner">
+            <div class="aui-list-item-inner aui-list-item-arrow">
+              <div class="aui-list-item-text">
+                <div class="aui-list-item-title type"><?php echo $val['login_code'];?></div>
+                <div class="aui-list-item-right type">Credit: 1000</div>
+                <div class="aui-list-item-right text colorcc0000">$500</div>
+              </div>
+              <div class="aui-list-item-text">
+                <div class="aui-list-item-title title color999">C1</div>
+                <div class="aui-list-item-right text color999">1Contract</div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <?php }?>
+      </ul>
+    <?php }else{?>
+      <div class="no-record"><?php echo $lang['label_no_data'];?></div>
+    <?php }?>
+  </div>                        
+</div>
+<?php include_once(template('widget/inc_footer'));?>
+<script type="text/javascript">
+
+</script>

@@ -1,0 +1,324 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: Seven
+ * Date: 2017/11/7
+ * Time: 9:35
+ */
+class user
+{
+
+    /**
+     * 获取user信息
+     * @param $uid
+     * @return result
+     */
+    public function getUserInfo($uid)
+    {
+        $uid = intval($uid);
+        $m_um_user = M('um_user');
+        $m_um_role_role = M('um_user_role');
+        $m_special_auth = M('um_special_auth');
+        $user_info = $m_um_user->find(array('uid' => $uid));
+        if (empty($user_info)) {
+            return new result(false, 'Invalid Id');
+        }
+
+        $role_arr = $m_um_role_role->select(array('user_id' => $uid));
+        $special_auth = $m_special_auth->select(array('user_id' => $uid));
+        $role_arr = array_column($role_arr, 'role_id');
+
+        $class_role = new role();
+        $select_auth = array();
+        foreach ($role_arr as $role_id) {
+            $rt = $class_role->getRoleInfo($role_id);
+            $select_auth = array_merge($select_auth, $rt->DATA['select_auth']);
+        }
+        $select_auth = array_unique($select_auth);
+        $allow_auth = array();
+        $limit_auth = array();
+        foreach ($special_auth as $auth) {
+            if ($auth['special_type'] == 1) {
+                $allow_auth[] = $auth['auth_code'];
+            }
+            if ($auth['special_type'] == 2) {
+                $limit_auth[] = $auth['auth_code'];
+            }
+        }
+
+
+        $select_auth = array_merge($select_auth, $allow_auth);
+        $select_auth = array_unique($select_auth);
+        $select_auth = array_diff($select_auth, $limit_auth);
+
+        $user_info['role_arr'] = $role_arr;
+        $user_info['select_auth'] = $select_auth;
+        return new result(true, '', $user_info);
+    }
+
+    /**
+     * 添加user
+     * @param $param
+     * @return result
+     */
+    public function addUser($param)
+    {
+        $user_code = trim($param['user_code']);
+        $user_name = trim($param['user_name']);
+        $password = trim($param['password']);
+        $branch_id = intval($param['branch_id']);
+        $depart_id = intval($param['depart_id']);
+        $role_select = $param['role_select'];
+        $auth_select = $param['auth_select'];
+        $remark = $param['remark'];
+        $user_status = intval($param['user_status']);
+        $creator_id = intval($param['creator_id']);
+        $creator_name = $param['creator_name'];
+        if (!$user_code || !$user_name) {
+            return new result(false, 'User code or name cannot be empty!');
+        }
+        $m_um_user = M('um_user');
+        $m_um_role_role = M('um_user_role');
+        $m_special_auth = M('um_special_auth');
+
+        $chk_code = $m_um_user->getRow(array('user_code' => $user_code));
+        if ($chk_code) {
+            return new result(false, 'Code exists!');
+        }
+
+        $conn = ormYo::Conn();
+        $conn->startTransaction();
+        try {
+
+            $row = $m_um_user->newRow();
+            $row->user_code = $user_code;
+            $row->user_name = $user_name;
+            $row->password = md5($password);
+            $row->branch_id = $branch_id;
+            $row->depart_id = $depart_id;
+            $row->user_status = $user_status;
+            $row->obj_guid = '';
+
+            $row->creator_id = $creator_id;
+            $row->creator_name = $creator_name;
+            $row->create_time = Now();
+            $row->remark = $remark;
+            $rt_1 = $row->insert();
+            if (!$rt_1->STS) {
+                $conn->rollback();
+                return new result(false, 'Add failed--' . $rt_1->MSG);
+            }
+
+            $auth_list = array();
+            $class_role = new role();
+            foreach ($role_select as $role) {
+                $row_role = $m_um_role_role->newRow();
+                $row_role->user_id = $rt_1->AUTO_ID;
+                $row_role->role_id = $role;
+                $rt_2 = $row_role->insert();
+                if (!$rt_2->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Add failed--' . $rt_2->MSG);
+                }
+
+                $rt_5 = $class_role->getRoleInfo($role);
+                $auth_list = array_merge($auth_list, $rt_5->DATA['select_auth']);
+            }
+            $auth_list = array_unique($auth_list);
+            $allow_auth = array_diff($auth_select, $auth_list);
+            $limit_auth = array_diff($auth_list, $auth_select);
+
+            foreach ($allow_auth as $auth) {
+                $row_special_auth = $m_special_auth->newRow();
+                $row_special_auth->user_id = $rt_1->AUTO_ID;
+                $row_special_auth->special_type = 1;
+                $row_special_auth->auth_code = $auth;
+                $rt_3 = $row_special_auth->insert();
+                if (!$rt_3->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Add failed--' . $rt_3->MSG);
+                }
+            }
+
+            foreach ($limit_auth as $auth) {
+                $row_special_auth = $m_special_auth->newRow();
+                $row_special_auth->user_id = $rt_1->AUTO_ID;
+                $row_special_auth->special_type = 2;
+                $row_special_auth->auth_code = $auth;
+                $rt_4 = $row_special_auth->insert();
+                if (!$rt_4->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Add failed--' . $rt_4->MSG);
+                }
+            }
+
+            $conn->submitTransaction();
+            return new result(true, 'Add Successful');
+        } catch (Exception $ex) {
+            $conn->rollback();
+            return new result(false, $ex->getMessage());
+        }
+    }
+
+    /**
+     * 编辑user
+     * @param $param
+     * @return result
+     */
+    public function editUser($param)
+    {
+        $uid = intval($param['uid']);
+        $user_code = trim($param['user_code']);
+        $user_name = trim($param['user_name']);
+        $password = trim($param['password']);
+        $branch_id = intval($param['branch_id']);
+        $depart_id = intval($param['depart_id']);
+        $role_select = $param['role_select'];
+        $auth_select = $param['auth_select'];
+        $remark = $param['remark'];
+        $user_status = intval($param['user_status']);
+        if (!$user_code || !$user_name) {
+            return new result(false, 'User code or name cannot be empty!');
+        }
+        $m_um_user = M('um_user');
+        $m_um_user_role = M('um_user_role');
+        $m_special_auth = M('um_special_auth');
+
+        $row = $m_um_user->getRow(array('uid' => $uid));
+        if (empty($row)) {
+            return new result(false, 'Invalid Id!');
+        }
+
+        $chk_code = $m_um_user->getRow(array('user_code' => $user_code, 'uid' => array('neq', $uid)));
+        if ($chk_code) {
+            return new result(false, 'Code exists!');
+        }
+
+        $conn = ormYo::Conn();
+        $conn->startTransaction();
+        try {
+            $row->user_code = $user_code;
+            $row->user_name = $user_name;
+            if ($password) {
+                $row->password = md5($password);
+            }
+            $row->branch_id = $branch_id;
+            $row->depart_id = $depart_id;
+            $row->user_status = $user_status;
+            $row->update_time = Now();
+            $row->remark = $remark;
+            $rt_1 = $row->update();
+            if (!$rt_1->STS) {
+                $conn->rollback();
+                return new result(false, 'Edit failed--' . $rt_1->MSG);
+            }
+
+            $rt_5 = $m_um_user_role->delete(array('user_id' => $uid));
+            if (!$rt_5->STS) {
+                $conn->rollback();
+                return new result(false, 'Edit failed--' . $rt_5->MSG);
+            }
+
+            $auth_list = array();
+            $class_role = new role();
+            foreach ($role_select as $role) {
+                $row_role = $m_um_user_role->newRow();
+                $row_role->user_id = $uid;
+                $row_role->role_id = $role;
+                $rt_2 = $row_role->insert();
+                if (!$rt_2->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Edit failed--' . $rt_2->MSG);
+                }
+
+                $rt_5 = $class_role->getRoleInfo($role);
+                $auth_list = array_merge($auth_list, $rt_5->DATA['select_auth']);
+            }
+            $auth_list = array_unique($auth_list);
+            $allow_auth = array_diff($auth_select, $auth_list);
+            $limit_auth = array_diff($auth_list, $auth_select);
+
+            $rt_6 = $m_special_auth->delete(array('user_id' => $uid));
+            if (!$rt_6->STS) {
+                $conn->rollback();
+                return new result(false, 'Edit failed--' . $rt_6->MSG);
+            }
+            foreach ($allow_auth as $auth) {
+                $row_special_auth = $m_special_auth->newRow();
+                $row_special_auth->user_id = $uid;
+                $row_special_auth->special_type = 1;
+                $row_special_auth->auth_code = $auth;
+                $rt_3 = $row_special_auth->insert();
+                if (!$rt_3->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Edit failed--' . $rt_3->MSG);
+                }
+            }
+
+            foreach ($limit_auth as $auth) {
+                $row_special_auth = $m_special_auth->newRow();
+                $row_special_auth->user_id = $uid;
+                $row_special_auth->special_type = 2;
+                $row_special_auth->auth_code = $auth;
+                $rt_4 = $row_special_auth->insert();
+                if (!$rt_4->STS) {
+                    $conn->rollback();
+                    return new result(false, 'Edit failed--' . $rt_4->MSG);
+                }
+            }
+
+            $conn->submitTransaction();
+            return new result(true, 'Edit Successful');
+        } catch (Exception $ex) {
+            $conn->rollback();
+            return new result(false, $ex->getMessage());
+        }
+    }
+
+    /**
+     * 删除user
+     * @param $uid
+     * @return result
+     */
+    public function deleteUser($uid)
+    {
+        $m_um_user = M('um_user');
+        $m_um_user_role = M('um_user_role');
+        $m_special_auth = M('um_special_auth');
+
+        $uid = intval($uid);
+        $row = $m_um_user->getRow(array('uid' => $uid));
+        if (empty($row)) {
+            return new result(false, 'Invalid Id!');
+        }
+
+        $conn = ormYo::Conn();
+        $conn->startTransaction();
+        try {
+            $rt_1 = $row->delete();
+            if (!$rt_1->STS) {
+                $conn->rollback();
+                return new result(false, 'Delete failed--' . $rt_1->MSG);
+            }
+
+            $rt_2 = $m_um_user_role->delete(array('user_id' => $uid));
+            if (!$rt_2->STS) {
+                $conn->rollback();
+                return new result(false, 'Delete failed--' . $rt_2->MSG);
+            }
+
+            $rt_3 = $m_special_auth->delete(array('user_id' => $uid));
+            if (!$rt_3->STS) {
+                $conn->rollback();
+                return new result(false, 'Delete failed--' . $rt_3->MSG);
+            }
+
+            $conn->submitTransaction();
+            return new result(true, 'Delete Successful');
+        } catch (Exception $ex) {
+            $conn->rollback();
+            return new result(false, $ex->getMessage());
+        }
+    }
+}

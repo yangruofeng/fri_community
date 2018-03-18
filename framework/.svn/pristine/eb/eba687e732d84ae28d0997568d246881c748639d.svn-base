@@ -1,0 +1,37 @@
+<?php
+$lang['auth_user'] = 'User Group';
+$lang['auth_user_role'] = 'Role';
+$lang['auth_user_user'] = 'User';
+$lang['auth_user_log'] = 'Log';
+
+$lang['auth_loan'] = 'Loan Group';
+$lang['auth_loan_client'] = 'Client';
+$lang['auth_loan_credit'] = 'Credit';
+$lang['auth_loan_request'] = 'Request';
+$lang['auth_loan_contract'] = 'Contract';
+
+$lang['auth_setting'] = 'Setting Group';
+$lang['auth_setting_companyinfo'] = 'Company Info';
+$lang['auth_setting_branch'] = 'Branch';
+$lang['auth_setting_department'] = 'Department';
+$lang['auth_region_list'] = 'Region';
+$lang['auth_setting_contract'] = 'Contract';
+$lang['auth_setting_dictionary'] = 'Dictionary';
+$lang['auth_setting_shotcode'] = 'Shot Code';
+$lang['auth_setting_codingrule'] = 'Coding Rule';
+$lang['auth_setting_loanproduct'] = 'Loan Product';
+
+$lang['auth_dev'] = 'Dev';
+$lang['auth_dev_appversion'] = 'App Version';
+
+$lang['auth_report'] = 'Report Group';
+$lang['auth_report_overview'] = 'Overview';
+$lang['auth_report_clientlist'] = 'Client List';
+$lang['auth_report_contractlist'] = 'Contract List';
+$lang['auth_report_creditlist'] = 'Credit List';
+$lang['auth_report_todayreport'] = 'Today Report';
+$lang['auth_report_loanlist'] = 'Loan List';
+$lang['auth_report_repaymentlist'] = 'Repayment List';
+$lang['auth_report_assetliability'] = 'Asset Liability';
+$lang['auth_report_profitreport'] = 'Profit Report';
+

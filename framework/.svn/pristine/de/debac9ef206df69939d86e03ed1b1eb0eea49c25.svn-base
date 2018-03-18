@@ -1,0 +1,156 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: sahara
+ * Date: 2017/11/6
+ * Time: 17:53
+ */
+class loan_accountModel extends tableModelBase
+{
+    public function __construct()
+    {
+        parent::__construct('loan_account');
+    }
+
+    /**
+     * 获取role信息
+     * @param $uid
+     * @return result
+     */
+    public function getCreditInfo($obj_guid)
+    {
+        $info = $this->find(array('obj_guid' => $obj_guid));
+        if (empty($info)) {
+            return new result(false, 'Invalid Account');
+        }
+        return new result(true, '', $info);
+    }
+
+    public function addAccount($obj_guid){
+      //创建account
+      $insert = $this->newRow();
+      $insert->obj_guid = $obj_guid;
+      $insert->update_time = Now();
+      $rt = $insert->insert();
+      if ($rt->STS) {
+        return new result(true, '', $rt->SOURCE_ROW);
+      } else {
+        return new result(false, 'Invalid Account');
+      }
+    }
+
+    /**
+     * 编辑role
+     * @param $param
+     * @return result
+     */
+    public function editCredit($param)
+    {
+        $obj_guid = intval($param['obj_guid']);
+        $before_credit = $param['before_credit'];
+        $credit = $param['credit'];
+        $repayment_ability = $param['repayment_ability'];
+        $remark = $param['remark'];
+        if (!$credit) {
+            return new result(false, 'Credit cannot be empty!');
+        }
+        $m_loan_account = M('loan_account');
+        $m_loan_approval = M('loan_approval');
+
+        $row = $m_loan_account->getRow(array('obj_guid' => $obj_guid));
+        if (empty($row)) {
+            return new result(false, 'Invalid Account!');
+        }
+        $approvaling = $m_loan_approval->getRow(array('obj_guid' => $obj_guid,'state'=>0));//申请中
+        if($approvaling){
+          return new result(false, 'Approving');
+        }
+
+        $rt_5 = $m_loan_approval->getRow(array('obj_guid' => $obj_guid));
+        $insert = $m_loan_approval->newRow();
+        if($rt_5){
+          $insert->type = ($before_credit <= $credit) ? 1 : 2;
+        }else{
+          $insert->type = 0;
+        }
+        $insert->obj_guid = $obj_guid;
+        $insert->before_credit = $before_credit;
+        $insert->current_credit = $credit;
+        $insert->repayment_ability = $repayment_ability;
+        $insert->remark = $remark;
+        $insert->create_time = Now();
+        $rt = $insert->insert();
+        if ($rt->STS) {
+            return new result(true, 'Approval successful!');
+        } else {
+            return new result(false, 'Add failed--' . $rt->MSG);
+        }
+    }
+    /**
+     * 编辑role
+     * @param $param
+     * @return result
+     */
+    public function editCreditOld($param)
+    {
+        $uid = intval($param['uid']);
+        $before_credit = $param['before_credit'];
+        $credit = $param['credit'];
+        $obj_guid = $param['obj_guid'];
+        $remark = $param['remark'];
+        if (!$credit) {
+            return new result(false, 'Credit cannot be empty!');
+        }
+        $m_loan_account = M('loan_account');
+        $m_loan_credit_release = M('loan_credit_release');
+
+        $row = $m_loan_account->getRow(array('uid' => $uid));
+        if (empty($row)) {
+            return new result(false, 'Invalid Id!');
+        }
+
+        $conn = ormYo::Conn();
+        $conn->startTransaction();
+        try {
+            $row->credit = $credit;
+            $row->update_time = Now();
+            $rt_1 = $row->update();
+            if (!$rt_1->STS) {
+                $conn->rollback();
+                return new result(false, 'Edit failed--' . $rt_1->MSG);
+            }
+            $class_loan_credit_release = new loan_credit_release();
+            $rt_5 = $class_loan_credit_release->getCreditReleaseInfo(array('obj_guid' => $obj_guid));
+            if ($rt_5->STS) { //update
+              $row_re_update = $m_loan_credit_release->getRow(array('obj_guid' => $obj_guid));
+              $row_re_update->before_credit = $before_credit;
+              $row_re_update->current_credit = $credit;
+              $row_re_update->remark = $remark;
+              $row_re_update->update_time = Now();
+              $rt_3 = $row_re_update->update();
+              if (!$rt_3->STS) {
+                  $conn->rollback();
+                  return new result(false, 'Edit failed--' . $rt_3->MSG);
+              }
+            }else{ //insert
+              $row_release = $m_loan_credit_release->newRow();
+              $row_release->obj_guid = $obj_guid;
+              $row_release->before_credit = $before_credit;
+              $row_release->current_credit = $credit;
+              $row_release->remark = $remark;
+              $row_release->operator_id = 0;
+              $row_release->operate_time = Now();
+              $rt_2 = $row_release->insert();
+              if (!$rt_2->STS) {
+                  $conn->rollback();
+                  return new result(false, 'Edit failed--' . $rt_2->MSG);
+              }
+            }
+            $conn->submitTransaction();
+            return new result(true, 'Edit Successful');
+        } catch (Exception $ex) {
+            $conn->rollback();
+            return new result(false, $ex->getMessage());
+        }
+    }
+}

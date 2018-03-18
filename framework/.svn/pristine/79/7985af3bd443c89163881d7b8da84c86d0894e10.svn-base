@@ -1,0 +1,353 @@
+<?php
+
+class userControl extends baseControl
+{
+    public function __construct()
+    {
+        parent::__construct();
+        Tpl::setLayout("empty_layout");
+        Tpl::output("html_title", "User List");
+        Tpl::setDir("user");
+    }
+
+    /**
+     * region list
+     */
+    public function roleOp()
+    {
+        Tpl::showPage("role");
+    }
+
+    /**
+     * role列表
+     * @param $p
+     * @return array
+     */
+    public function getRoleListOp($p)
+    {
+        $search_text = trim($p['search_text']);
+        $r = new ormReader();
+        $sql = "SELECT * FROM um_role";
+        if ($search_text) {
+            $sql .= " WHERE role_name LIKE '%" . $search_text . "%'";
+        }
+        $pageNumber = intval($p['pageNumber']) ?: 1;
+        $pageSize = intval($p['pageSize']) ?: 20;
+        $data = $r->getPage($sql, $pageNumber, $pageSize);
+        $rows = $data->rows;
+        $total = $data->count;
+        $pageTotal = $data->pageCount;
+
+        if ($rows) {
+            $role_ids = implode(',', array_column($rows, 'uid'));
+            $sql = "SELECT role_id,auth_group_id FROM um_role_group WHERE role_id IN ($role_ids)";
+            $auth_group = $r->getRows($sql);
+            $auth_group_new = array();
+            foreach ($auth_group as $val) {
+                $auth_group_new[$val['role_id']][] = $val['auth_group_id'];
+            }
+            foreach ($rows as $key => $row) {
+                $row['role_group'] = $auth_group_new[$row['uid']];
+                $rows[$key] = $row;
+            }
+        }
+
+        return array(
+            "sts" => true,
+            "data" => $rows,
+            "total" => $total,
+            "pageNumber" => $pageNumber,
+            "pageTotal" => $pageTotal,
+            "pageSize" => $pageSize,
+        );
+    }
+
+    /**
+     * 添加role
+     */
+    public function addRoleOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        if ($p['form_submit'] == 'ok') {
+            $class_role = new role();
+            $p['creator_id'] = $this->user_id;
+            $p['creator_name'] = $this->user_name;
+            $rt = $class_role->addRole($p);
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                unset($p['form_submit']);
+                showMessage($rt->MSG, getUrl('user', 'addRole', $p, false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+        } else {
+            $define_auth_group = authBase::getAllAuthGroup();
+            $auth_group = array();
+            foreach ($define_auth_group as $key => $r) {
+                $role = authBase::getAuthGroup($r);
+                $auth_group_list = $role->getAuthList();
+                $auth_group_Key = $role->getGroupKey();
+                $auth_group[$auth_group_Key] = $auth_group_list;
+            }
+            Tpl::output('auth_group', $auth_group);
+            Tpl::showPage("role.add");
+        }
+    }
+
+    /**
+     * 添加role
+     */
+    public function editRoleOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        $class_role = new role();
+        if ($p['form_submit'] == 'ok') {
+            $rt = $class_role->editRole($p);
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                unset($p['form_submit']);
+                showMessage($rt->MSG, getUrl('user', 'addRole', $p, false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+        } else {
+            $rt = $class_role->getRoleInfo(intval($_GET['uid']));
+            if (!$rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+            $role_info = $rt->DATA;
+            $role_group = $role_info['role_group'];
+            $auth_select = $role_info['allow_auth'];
+
+            $define_auth_group = authBase::getAllAuthGroup();
+            $auth_group = array();
+            foreach ($define_auth_group as $key => $r) {
+                $role = authBase::getAuthGroup($r);
+                $auth_group_list = $role->getAuthList();
+                $auth_group_Key = $role->getGroupKey();
+                $auth_group[$auth_group_Key] = $auth_group_list;
+                if (in_array($r, $role_group)) {
+                    $auth_select = array_merge($auth_select, $auth_group_list);
+                }
+            }
+            Tpl::output('auth_group', $auth_group);
+            Tpl::output('role_info', $role_info);
+            Tpl::output('role_group', $role_group);
+            Tpl::output('auth_select', $auth_select);
+            Tpl::showPage("role.edit");
+        }
+    }
+
+    /**
+     * 删除role
+     */
+    public function deleteRoleOp()
+    {
+        $uid = intval($_GET['uid']);
+        $class_role = new role();
+        $rt = $class_role->deleteRole($uid);
+        showMessage($rt->MSG);
+    }
+
+    /**
+     * user list
+     */
+    public function userOp()
+    {
+        Tpl::showPage("user");
+    }
+
+    /**
+     * role列表
+     * @param $p
+     * @return array
+     */
+    public function getUserListOp($p)
+    {
+        $r = new ormReader();
+        $sql = "SELECT uu.*,sb.branch_name,sd.depart_name FROM um_user uu LEFT JOIN site_branch sb ON uu.branch_id = sb.uid LEFT JOIN site_depart sd ON uu.depart_id = sd.uid";
+        $search_text = trim($p['search_text']);
+        if ($search_text) {
+            $sql .= " WHERE uu.user_code LIKE '%" . $search_text . "%' OR uu.user_name LIKE '%" . $search_text . "%'";
+        }
+        $pageNumber = intval($p['pageNumber']) ?: 1;
+        $pageSize = intval($p['pageSize']) ?: 20;
+        $data = $r->getPage($sql, $pageNumber, $pageSize);
+        $rows = $data->rows;
+        $total = $data->count;
+        $pageTotal = $data->pageCount;
+
+        if ($rows) {
+            $user_ids = implode(',', array_column($rows, 'uid'));
+            $sql = "SELECT uur.user_id,ur.role_name FROM um_user_role uur LEFT JOIN um_role ur ON uur.role_id = ur.uid WHERE user_id IN ($user_ids)";
+            $role_arr = $r->getRows($sql);
+            $role_arr_new = array();
+            foreach ($role_arr as $val) {
+                $role_arr_new[$val['user_id']][] = $val['role_name'];
+            }
+            foreach ($rows as $key => $row) {
+                $row['role_group'] = $role_arr_new[$row['uid']];
+                unset($row['password']);
+                $rows[$key] = $row;
+            }
+        }
+
+        return array(
+            "sts" => true,
+            "data" => $rows,
+            "total" => $total,
+            "pageNumber" => $pageNumber,
+            "pageTotal" => $pageTotal,
+            "pageSize" => $pageSize,
+        );
+    }
+
+    /**
+     * 添加user
+     */
+    public function addUserOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        if ($p['form_submit'] == 'ok') {
+            $class_user = new user();
+            $p['creator_id'] = $this->user_id;
+            $p['creator_name'] = $this->user_name;
+            $rt = $class_user->addUser($p);
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'user', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                unset($p['form_submit']);
+                showMessage($rt->MSG, getUrl('user', 'addUser', $p, false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+        } else {
+            $define_auth_group = authBase::getAllAuthGroup();
+            $auth_group = array();
+            foreach ($define_auth_group as $key => $r) {
+                $role = authBase::getAuthGroup($r);
+                $auth_group_list = $role->getAuthList();
+                $auth_group_Key = $role->getGroupKey();
+                $auth_group[$auth_group_Key] = $auth_group_list;
+            }
+
+            $class_role = new role();
+            $rt = $class_role->getRoleList();
+            if (!$rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+            $role_list = $rt->DATA;
+
+            $m_site_branch = M('site_branch');
+            $branch_list = $m_site_branch->select(array('status' => 1));
+
+            $m_site_depart = M('site_depart');
+            $depart_list = $m_site_depart->select(array('uid' => array('gt', 0)));
+
+            Tpl::output('auth_group', $auth_group);
+            Tpl::output('role_list', $role_list);
+            Tpl::output('branch_list', $branch_list);
+            Tpl::output('depart_list', $depart_list);
+            Tpl::showPage("user.add");
+        }
+    }
+
+    /**
+     * 编辑user
+     */
+    public function editUserOp()
+    {
+        $p = array_merge(array(), $_GET, $_POST);
+        $class_user = new user();
+        if ($p['form_submit'] == 'ok') {
+            $rt = $class_user->editUser($p);
+            if ($rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'user', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            } else {
+                unset($p['form_submit']);
+                showMessage($rt->MSG, getUrl('user', 'editUser', $p, false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+        } else {
+            $define_auth_group = authBase::getAllAuthGroup();
+            $auth_group = array();
+            foreach ($define_auth_group as $key => $r) {
+                $role = authBase::getAuthGroup($r);
+                $auth_group_list = $role->getAuthList();
+                $auth_group_Key = $role->getGroupKey();
+                $auth_group[$auth_group_Key] = $auth_group_list;
+            }
+
+            $class_role = new role();
+            $rt = $class_role->getRoleList();
+            if (!$rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+            $role_list = $rt->DATA;
+
+            $rt = $class_user->getUserInfo(intval($_GET['uid']));
+            if (!$rt->STS) {
+                showMessage($rt->MSG, getUrl('user', 'role', array(), false, BACK_OFFICE_SITE_URL . '/index.php'));
+            }
+
+            $m_site_branch = M('site_branch');
+            $branch_list = $m_site_branch->select(array('status' => 1));
+
+            $m_site_depart = M('site_depart');
+            $depart_list = $m_site_depart->select(array('uid' => array('gt', 0)));
+
+            Tpl::output('user_info', $rt->DATA);
+            Tpl::output('auth_group', $auth_group);
+            Tpl::output('role_list', $role_list);
+            Tpl::output('branch_list', $branch_list);
+            Tpl::output('depart_list', $depart_list);
+            Tpl::showPage("user.edit");
+        }
+    }
+
+    /**
+     * 删除role
+     */
+    public function deleteUserOp()
+    {
+        $uid = intval($_GET['uid']);
+        $class_user = new user();
+        $rt = $class_user->deleteUser($uid);
+        showMessage($rt->MSG);
+    }
+
+    /**
+     * 登录日志
+     */
+    public function logOp()
+    {
+        Tpl::showPage("log");
+    }
+
+    /**
+     * 获取用户登录日志
+     * @param $p
+     * @return array
+     */
+    public function getLogListOp($p)
+    {
+        $r = new ormReader();
+        $sql = "SELECT uul.*,uu.user_code FROM um_user_log uul LEFT JOIN um_user uu ON uul.user_id = uu.uid";
+        $search_text = trim($p['search_text']);
+        if ($search_text) {
+            $sql .= " WHERE uu.user_code LIKE '%" . $search_text . "%' OR uu.user_name LIKE '%" . $search_text . "%' OR uul.client_type like '%" . $search_text . "%'";
+        }
+        $sql .= " ORDER BY uul.uid DESC";
+        $pageNumber = intval($p['pageNumber']) ?: 1;
+        $pageSize = intval($p['pageSize']) ?: 20;
+        $data = $r->getPage($sql, $pageNumber, $pageSize);
+        $rows = $data->rows;
+        $total = $data->count;
+        $pageTotal = $data->pageCount;
+
+        return array(
+            "sts" => true,
+            "data" => $rows,
+            "total" => $total,
+            "pageNumber" => $pageNumber,
+            "pageTotal" => $pageTotal,
+            "pageSize" => $pageSize,
+        );
+    }
+
+}

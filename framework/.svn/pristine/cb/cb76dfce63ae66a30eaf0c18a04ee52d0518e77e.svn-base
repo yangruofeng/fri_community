@@ -1,0 +1,174 @@
+<?php
+
+class requestControl {
+  public function __construct(){
+    Language::read('act,label,tip');
+    Tpl::setLayout('empty_layout');
+    Tpl::setDir('request');
+  }
+
+  public function indexOp(){
+    Tpl::output('html_title', 'Request');
+    Tpl::output('header_title', 'Request');
+    Tpl::output('nav_footer', 'request');
+    Tpl::showPage('index');
+  }
+
+  public function getRequestDataOp(){
+    $data = $_POST;
+    $data['officer_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.bound.loan.request.list.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $list = $rt['DATA']['list'];
+    foreach ($list as $key => $value) {
+      $str = 'New';
+      switch ($value['state']) {
+        case loanApplyStateEnum::LOCKED :
+          $str = 'Locked';
+          break;
+        case loanApplyStateEnum::CREATE :
+          $str = 'New';
+          break;
+        case loanApplyStateEnum::OPERATOR_REJECT :
+          $str = 'Reject';
+          break;
+        case loanApplyStateEnum::ALLOT_CO :
+          $str = 'Allot';
+          break;
+        case loanApplyStateEnum::CO_HANDING :
+          $str = 'Handing';
+          break;
+        case loanApplyStateEnum::CO_CANCEL :
+          $str = 'Cancel';
+          break;
+        case loanApplyStateEnum::CO_APPROVED :
+          $str = 'Approved';
+          break;
+        default:
+          # code...
+          break;
+      }
+    $list[$key]['state'] = $str;
+    $list[$key]['apply_time'] = timeFormat($value['apply_time']);
+    }
+    $rt['DATA']['list'] = $list;
+    if($rt['STS']){
+      return new result(true, L('tip_success'), $rt['DATA']);
+    }else{
+      return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function detailOp(){
+    $data = array();
+    $data['request_id'] = $_GET['uid'];
+    $url = ENTRY_API_SITE_URL.'/co.get.loan.request.detail.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if(!$rt['DATA']['request_detail']['member_id']){
+      Tpl::output('data', $rt['DATA']);
+      Tpl::output('html_title', 'Bind Client');
+      Tpl::output('header_title', 'Bind Client');
+      Tpl::showPage('client.bind');
+    }else{
+      Tpl::output('data', $rt['DATA']);
+      Tpl::output('html_title', 'Request Detail');
+      Tpl::output('header_title', 'Request Detail');
+      Tpl::showPage('detail');
+    }
+    
+  }
+
+  public function handleFirstOp(){
+    Tpl::output('id', $_GET['id']);
+    Tpl::output('html_title', 'Request Detail');
+    Tpl::output('header_title', 'Request Detail');
+    Tpl::showPage('handle.first');
+  }
+
+  public function ajaxHandleFirstOp(){
+    $data = $_POST;
+    $data['officer_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.loan.request.check.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      if($rt['DATA']['request_detail']){
+        return new result(true, '11', $rt['DATA']['request_detail']);
+      }else{
+        return new result(false, 'Have Canceled');
+      }
+    }else{
+      return new result(false, 'Have Canceled');
+    }
+  }
+
+  public function handleSecondOp(){
+    $url = ENTRY_API_SITE_URL.'/co.get.all.loan.product.php';
+    $rt = curl_post($url, array());
+    $rt = json_decode($rt, true);
+    Tpl::output('request_id', $_GET['id']);
+    Tpl::output('product', $rt['DATA']['list']);
+    Tpl::output('html_title', 'Request Detail');
+    Tpl::output('header_title', 'Request Detail');
+    Tpl::showPage('handle.second');
+  }
+
+  public function ajaxHandleSecondOp(){
+    $data = $_POST;
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.loan.request.bind.product.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      if($rt['DATA']['request_detail']){
+        return new result(true, '11', $rt['DATA']);
+      }else{
+        return new result(false, 'Have Canceled');
+      }
+    }else{
+      return new result(false, 'Have Canceled');
+    }
+  }
+
+  public function handleThirdOp(){
+    $data['request_id'] = $_GET['request_id'];
+    $url = ENTRY_API_SITE_URL.'/co.get.loan.request.detail.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    Tpl::output('type', $_GET['type']);
+    Tpl::output('detail', $rt['DATA']['request_detail']);
+    Tpl::output('html_title', 'Request Detail');
+    Tpl::output('header_title', 'Request Detail');
+    Tpl::showPage('handle.third');
+  }
+
+  public function ajaxHandleApprovedOp(){
+    $data['request_id'] = $_POST['request_id'];
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.loan.request.approved.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, '11', $rt['DATA']);
+    }else{
+      return new result(false, $rt['MSG']);
+    }
+  }
+
+  public function ajaxBindClientOp(){
+    $data = $_POST;
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.loan.request.bind.member.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, '11', $rt['DATA']);
+    }else{
+      return new result(false, $rt['MSG']);
+    }
+  }
+}

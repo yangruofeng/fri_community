@@ -1,0 +1,13 @@
+<?php
+$class_map=array (
+  'Enum' => 'core/Enum.php',
+  'control' => 'core/control.php',
+  'baseControl' => 'weixin_baike\\mobile/control/base.php',
+  'indexControl' => 'weixin_baike\\mobile/control/index.php',
+  'common_app_versionModel' => 'microbank/data/model/common_app_version.model.php',
+  'operator' => 'core/operator.php',
+  'role' => 'weixin_baike/class/role.php',
+  'monitorClass' => 'microbank/class/monitor.class.php',
+  'bank_apiControl' => 'microbank\\api/control/bank_api.php',
+  'um_user_logModel' => 'microbank/data/model/um_user_log.model.php',
+);

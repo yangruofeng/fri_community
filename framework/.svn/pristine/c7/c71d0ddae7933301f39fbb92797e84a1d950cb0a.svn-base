@@ -1,0 +1,545 @@
+<?php
+
+class homeControl {
+  public function __construct() {
+    Language::read('act,label,tip'); 
+    Tpl::setLayout('empty_layout'); 
+    Tpl::setDir('home'); 
+  }
+
+  public function indexOp() {
+    $user_info = array('state' => 10);
+    $token = $_GET['token'];
+    $officer_id = $_GET['id'];
+    if($token && $officer_id){
+      $data['officer_id'] = $officer_id;
+      $data['token'] = $token;
+      $url = ENTRY_API_SITE_URL . '/officer.base.info.php';
+      $rt = curl_post($url, $data);
+      $rt = json_decode($rt, true);
+      if ($rt['STS']) {
+        $user_info = $rt['DATA']['user_info'];
+        $user_info['token'] = $token;
+        setNcCookie('token', $token);
+        setNcCookie('member_id', $user_info['uid']);
+        setNcCookie('user_code', $user_info['user_code']);
+        setNcCookie('user_name', $user_info['user_name']);
+      }
+    }
+    Tpl::output('html_title', L('label_index')); 
+    Tpl::output('header_title', L('label_home')); 
+    Tpl::output('nav_footer', 'home'); 
+    Tpl::output('user_info', json_encode($user_info)); 
+    Tpl::output('user_code', $user_info['user_code'] ? : cookie('user_code')); 
+    Tpl::output('user_name', $user_info['user_name'] ? : cookie('user_name')); 
+    Tpl::showPage('index'); 
+  }
+
+  public function regFirstOp() {
+    if(!cookie('member_id')){
+      //@header("Location: ".getUrl('login', 'index', array(), false, WAP_OPERATOR_SITE_URL)."");
+    }
+    Tpl::output('html_title', 'Register Customer'); 
+    Tpl::output('header_title', 'Register Customer'); 
+    Tpl::showPage('register.first'); 
+  }
+
+  public function ajaxRegFirstOp(){
+    $data = $_POST; 
+    $url = ENTRY_API_SITE_URL . '/phone.is.registered.php'; 
+    $rt = curl_post($url, $data); 
+    $rt = json_decode($rt, true); 
+    if($rt['DATA']['is_registered']){
+      return new result(false, '手机号已被注册');
+    }
+    $url = ENTRY_API_SITE_URL . '/phone.code.send.php'; 
+    $rt = curl_post($url, $data); 
+    $rt = json_decode($rt, true); 
+    return new result(true, $rt['DATA']);
+  }
+
+  public function regSecondOp(){
+    Tpl::output('officer_id', cookie('member_id')); 
+    Tpl::output('officer_name', cookie('member_name')); 
+    Tpl::output('html_title', 'Information'); 
+    Tpl::output('header_title', 'Information'); 
+    Tpl::showPage('register.second'); 
+  }
+  public function phoneRegisterOp() {
+    $url = ENTRY_API_SITE_URL . '/phone.code.verify.php';
+    $rt = curl_post($url, $_POST);
+    $rt = json_decode($rt, true);
+    if ($rt['STS']) {
+        return new result(true, L('tip_register_success'), array('member_id' => $rt['DATA']['uid']));
+    } else {
+        return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function regThirdOp(){
+    Tpl::output('html_title', 'Register Success'); 
+    Tpl::output('header_title', 'Register Success'); 
+    Tpl::showPage('register.third'); 
+  }
+
+  public function searchOp(){
+    $type = $_GET['type'];
+    $params['type'] = $type;
+    $params['guid'] = $_GET['guid'];
+    $params['country_code'] = $_GET['country_code'];
+    $params['phone_number'] = $_GET['phone_number'];
+    $url = ENTRY_API_SITE_URL . '/officer.search.member.php';
+    $rt = curl_post($url, $params);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    Tpl::output('data', $data); 
+    Tpl::output('html_title', 'Search'); 
+    Tpl::output('header_title', 'Search'); 
+    Tpl::showPage('search.index');  
+  }
+
+  
+
+  public function searchClientOp(){
+    $url = ENTRY_API_SITE_URL . '/officer.search.member.php';
+    $rt = curl_post($url, $_POST);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    if($data['uid']){
+      return new result(true, 'success', $data);
+    }else{
+      return new result(false, 'no member.');
+    }
+  }
+
+  public function verifyOp(){
+    $url = ENTRY_API_SITE_URL.'/officer.get.member.cert.result.php';
+    $data = array();
+    $data['token'] = cookie('token');
+    $data['member_id'] = $_GET['id'];
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $credit = array();
+    if($rt['STS']){
+      $credit = $rt['DATA'];
+    }
+    Tpl::output('credit', $credit);
+    Tpl::output('html_title', 'Verify'); 
+    Tpl::output('header_title', 'Verify'); 
+    Tpl::showPage('verify.index'); 
+  }
+
+  public function getCertedResultOp(){
+    $url = ENTRY_API_SITE_URL.'/officer.get.member.cert.detail.php';
+    $data = array();
+    $data['token'] = cookie('token');
+    $data['member_id'] = $_GET['id'];
+    $data['type'] = $_GET['type'];
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'), array('cert_id' => $rt['DATA']['cert_result']['uid'], 'state' => $rt['DATA']['cert_result']['verify_state']));
+    }else{
+      return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function cerificationOp(){
+    $type = $_GET['type'];
+    $cert_id = $_GET['cert_id'];
+    Tpl::output('type', $type);
+    Tpl::output('token', cookie('token'));
+    Tpl::output('cert_id', $cert_id?:0);
+    Tpl::output('member_id', $_GET['id']);
+    switch ($type) {
+      case certificationTypeEnum::ID :
+        Tpl::output('html_title', L('label_id_card'));
+        Tpl::output('header_title', L('label_id_card'));
+        Tpl::showPage('cerification.id');
+        break;
+      case certificationTypeEnum::FAIMILYBOOK :
+        Tpl::output('html_title', L('label_family_book'));
+        Tpl::output('header_title', L('label_family_book'));
+        Tpl::showPage('cerification.familybook');
+        break;
+      case certificationTypeEnum::PASSPORT : //1111
+        Tpl::output('html_title', L('label_family_book'));
+        Tpl::output('header_title', L('label_family_book'));
+        Tpl::showPage('cerification.familybook');
+        break;
+      case certificationTypeEnum::HOUSE :
+        Tpl::output('html_title', L('label_housing_property'));
+        Tpl::output('header_title', L('label_housing_property'));
+        Tpl::showPage('cerification.house');
+        break;
+      case certificationTypeEnum::CAR :
+        Tpl::output('html_title', L('label_vehicle_property'));
+        Tpl::output('header_title', L('label_vehicle_property'));
+        Tpl::showPage('cerification.car');
+        break;
+      case certificationTypeEnum::WORK_CERTIFICATION :
+        Tpl::output('html_title', L('label_working_certificate'));
+        Tpl::output('header_title', L('label_working_certificate'));
+        Tpl::showPage('cerification.work');
+        break;
+      case certificationTypeEnum::GUARANTEE_RELATIONSHIP :
+        $url = ENTRY_API_SITE_URL.'/system.config.init.php';
+        $rt = curl_post($url, array());
+        $rt = json_decode($rt, true);
+        Tpl::output('guarantee_relationship', $rt['DATA']['user_define']['guarantee_relationship']);
+        Tpl::output('html_title', 'Add Member');
+        Tpl::output('header_title', 'Add Member');
+        Tpl::showPage('cerification.relationshop');
+        break;
+      case certificationTypeEnum::LAND :
+        Tpl::output('html_title', L('label_landg_property'));
+        Tpl::output('header_title', L('label_landg_property'));
+        Tpl::showPage('cerification.land');
+        break;
+      case certificationTypeEnum::RESIDENT_BOOK :
+        $url = ENTRY_API_SITE_URL.'/member.certed.result.php';
+        $data = array();
+        $data['token'] = cookie('token');
+        $data['member_id'] = cookie('member_id');
+        $data['type'] = $type;
+        $rt = curl_post($url, $data);
+        $rt = json_decode($rt, true);
+        Tpl::output('data', $rt);
+        Tpl::output('html_title', L('label_resident_book'));
+        Tpl::output('header_title', L('label_resident_book'));
+        Tpl::showPage('cerification.residentbook');
+        break;
+      case certificationTypeEnum::MOTORBIKE : //11111
+        Tpl::output('html_title', L('label_motorcycle_asset_certificate'));
+        Tpl::output('header_title', L('label_motorcycle_asset_certificate'));
+        Tpl::showPage('cerification.motorcycle');
+        break;
+
+      default:
+        Tpl::showPage('index');
+        break;
+    }
+  }
+
+  public function showCertCheckInfoOp(){
+    $type = $_GET['type'];
+    $state = $_GET['state'];
+    $cert_id = $_GET['cert_id'];
+    Tpl::output('type', $type);
+    Tpl::output('state', $state);
+    Tpl::output('cert_id', $cert_id);
+    Tpl::output('token', cookie('token'));
+    Tpl::output('member_id', $_GET['member_id']);
+    switch ($type) {
+      case certificationTypeEnum::ID :
+        Tpl::output('html_title', L('label_id_card'));
+        Tpl::output('header_title', L('label_id_card'));
+        Tpl::showPage('cerification.id.check');
+        break;
+      case certificationTypeEnum::FAIMILYBOOK :
+        Tpl::output('html_title', L('label_family_book'));
+        Tpl::output('header_title', L('label_family_book'));
+        Tpl::showPage('cerification.familybook.check');
+        break;
+      case certificationTypeEnum::PASSPORT : //1111
+        Tpl::output('html_title', L('label_family_book'));
+        Tpl::output('header_title', L('label_family_book'));
+        Tpl::showPage('cerification.familybook.check');
+        break;
+      case certificationTypeEnum::HOUSE :
+        Tpl::output('html_title', L('label_housing_property'));
+        Tpl::output('header_title', L('label_housing_property'));
+        Tpl::showPage('cerification.house.check');
+        break;
+      case certificationTypeEnum::CAR :
+        Tpl::output('html_title', L('label_vehicle_property'));
+        Tpl::output('header_title', L('label_vehicle_property'));
+        Tpl::showPage('cerification.car.check');
+        break;
+      case certificationTypeEnum::WORK_CERTIFICATION :
+        Tpl::output('html_title', L('label_working_certificate'));
+        Tpl::output('header_title', L('label_working_certificate'));
+        Tpl::showPage('cerification.work.check');
+        break;
+      case certificationTypeEnum::GUARANTEE_RELATIONSHIP :
+        $url = ENTRY_API_SITE_URL.'/system.config.init.php';
+        $rt = curl_post($url, array());
+        $rt = json_decode($rt, true);
+        Tpl::output('guarantee_relationship', $rt['DATA']['user_define']['guarantee_relationship']);
+        Tpl::output('html_title', 'Add Member');
+        Tpl::output('header_title', 'Add Member');
+        Tpl::showPage('cerification.relationshop');
+        break;
+      case certificationTypeEnum::LAND :
+        Tpl::output('html_title', L('label_landg_property'));
+        Tpl::output('header_title', L('label_landg_property'));
+        Tpl::showPage('cerification.land');
+        break;
+      case certificationTypeEnum::RESIDENT_BOOK :
+        Tpl::output('html_title', L('label_resident_book'));
+        Tpl::output('header_title', L('label_resident_book'));
+        Tpl::showPage('cerification.residentbook.check');
+        break;
+      case certificationTypeEnum::MOTORBIKE : //11111
+        Tpl::output('html_title', L('label_motorcycle_asset_certificate'));
+        Tpl::output('header_title', L('label_motorcycle_asset_certificate'));
+        Tpl::showPage('cerification.motorcycle');
+        break;
+
+      default:
+        Tpl::showPage('index');
+        break;
+    }
+  }
+
+  public function certTypeListOp(){
+    $type = $_GET['type'];
+    $url = ENTRY_API_SITE_URL.'/officer.get.member.cert.detail.php';
+    $data = array();
+    $data['token'] = cookie('token');
+    $data['member_id'] = $_GET['id'];
+    $data['type'] = $type;
+    $page = 'certtype.list';
+    switch ($type) {
+      case certificationTypeEnum::CAR :
+        Tpl::output('html_title', L('label_vehicle_property'));
+        Tpl::output('header_title', L('label_vehicle_property'));
+        break;
+      case certificationTypeEnum::LAND :
+        Tpl::output('html_title', L('label_landg_property'));
+        Tpl::output('header_title', L('label_landg_property'));
+        break;
+      case certificationTypeEnum::HOUSE :
+        Tpl::output('html_title', L('label_housing_property'));
+        Tpl::output('header_title', L('label_housing_property'));
+        break;
+      case certificationTypeEnum::MOTORBIKE :
+        Tpl::output('html_title', L('label_motorcycle_asset_certificate'));
+        Tpl::output('header_title', L('label_motorcycle_asset_certificate'));
+        break;
+      case certificationTypeEnum::GUARANTEE_RELATIONSHIP :
+        $url = ENTRY_API_SITE_URL.'/co.get.member.guarantee.list.php';
+        Tpl::output('html_title', 'Guarantee Relation');
+        Tpl::output('header_title', 'Guarantee Relation');
+        $page = 'certtype.list.relationship';
+        break;
+      default:
+      Tpl::output('html_title', L('label_vehicle_property'));
+      Tpl::output('header_title', L('label_vehicle_property'));
+        break;
+    }
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    Tpl::output('list', $rt['DATA']);
+    Tpl::showPage($page);
+  }
+
+  public function ajaxAddRelationshipOp(){
+    $data = $_POST;
+    $data['member_id'] = $_POST['id'];
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/officer.submit.guarantee.request.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'));
+    }else{
+      return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function ajaxGuaranteeConfirmOp(){
+    $data = $_POST;
+    $data['member_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/member.guarantee.confirm.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'));
+    }else{
+      return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function addLoanRequestOp(){
+    Tpl::output('cid', $_GET['cid']); 
+    Tpl::output('client_id', $_GET['id']); 
+    Tpl::output('client_name', $_GET['name']); 
+    Tpl::output('html_title', 'Request For Loan'); 
+    Tpl::output('header_title', 'Request For Loan'); 
+    Tpl::showPage('loan.add'); 
+  }
+
+  public function ajaxAddLoanRequestOp(){
+    $params = $_POST;
+    $params['officer_id'] = cookie('member_id');
+    $params['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/co.add.loan.request.php';
+    $rt = curl_post($url, $params);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'));
+    }else{
+      //return new result(false, L('tip_code_'.$rt['CODE']));
+      return new result(false, $rt['MSG']);
+    }
+  }
+
+  public function ajaxAddCreditRequestOp(){
+    $data = $_POST;
+    $data['officer_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL.'/officer.submit.suggest.member.credit.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'));
+    }else{
+      //return new result(false, L('tip_code_'.$rt['CODE']));
+      return new result(false, $rt['MSG']);
+    }
+  }
+
+  public function clientRequestOp(){
+    $id = $_GET['id'];
+    Tpl::output('html_title', 'Client Request List'); 
+    Tpl::output('header_title', 'Client Request List'); 
+    Tpl::showPage('request.list'); 
+  }
+
+  public function ajaxClientRequestOp(){
+    $id = $_POST['id'];
+    $data = array();
+    $data['member_id'] = $id;
+    $url = ENTRY_API_SITE_URL.'/co.member.loan.request.list.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    if($rt['STS']){
+      return new result(true, L('tip_success'),$rt['DATA']['list']);
+    }else{
+      return new result(false, L('tip_code_'.$rt['CODE']));
+    }
+  }
+
+  public function informationOp(){
+    $data['type'] = 1;
+    $data['guid'] = $_GET['cid'];
+    $url = ENTRY_API_SITE_URL . '/officer.search.member.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    Tpl::output('data', $data); 
+
+    $data1['member_id'] = $_GET['id'];
+    $data1['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.get.member.work.detail.php';
+    $rt = curl_post($url, $data1);
+    $rt = json_decode($rt, true);
+    $rt = $rt['DATA'];
+    Tpl::output('work_info', $rt['work_detail']); 
+
+    Tpl::output('html_title', 'Information'); 
+    Tpl::output('header_title', 'Information'); 
+    Tpl::showPage('information'); 
+  }
+
+  public function idCardInfomationOp(){
+    $data['type'] = 1;
+    $data['guid'] = $_GET['cid'];
+    $url = ENTRY_API_SITE_URL . '/officer.search.member.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    Tpl::output('data', $data); 
+    Tpl::output('html_title', 'ID Card Info'); 
+    Tpl::output('header_title', 'ID Card Info'); 
+    Tpl::showPage('information.card'); 
+  }
+
+  public function occupationInfomationOp(){
+    $data['member_id'] = $_GET['id'];
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.get.member.work.detail.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $rt = $rt['DATA'];
+    Tpl::output('work_info', $rt['work_detail']); 
+    Tpl::output('html_title', 'Occupation Info'); 
+    Tpl::output('header_title', 'Occupation Info'); 
+    Tpl::showPage('information.occupation'); 
+  }
+  
+  public function assetsEvaluateOp(){
+    $data['member_id'] = $_GET['id'];
+    $data['officer_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.get.member.assets.evaluate.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    Tpl::output('data', $data); 
+    Tpl::output('html_title', 'Assets Evaluate'); 
+    Tpl::output('header_title', 'Assets Evaluate'); 
+    Tpl::showPage('assets.evaluate'); 
+  }
+
+  public function editAssetsEvaluateOp(){
+    $data['asset_id'] = $_GET['uid'];
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.get.member.asset.detail.php';
+    $rt = curl_post($url, $data);
+    $rt = json_decode($rt, true);
+    $data = $rt['DATA'];
+    Tpl::output('data', $data); 
+    Tpl::output('html_title', 'Edit Assets Evaluate'); 
+    Tpl::output('header_title', 'Edit Assets Evaluate'); 
+    Tpl::showPage('assets.evaluate.edit'); 
+  }
+
+  public function ajaxEditEvaluteOp(){
+    $data['id'] = $_GET['id']; 
+    $data['valuation'] = $_GET['valuation']; 
+    $data['remark'] = $_GET['remark']; 
+    $data['officer_id'] = cookie('member_id');
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.submit.member.assets.evaluate.php'; 
+    $rt = curl_post($url, $data); 
+    $rt = json_decode($rt, true); 
+    if($rt['STS']){
+      return new result(true, L('tip_success'),$rt['DATA']);
+    }else{
+      return new result(false, L('tip_code_'.$rt['DATA']['CODE']),$rt);
+    }
+  }
+
+  public function businessEvaluateOp(){
+    Tpl::output('html_title', 'Business Evaluate'); 
+    Tpl::output('header_title', 'Business Evaluate'); 
+    Tpl::showPage('business.evaluate'); 
+  }
+
+  public function contractListOp(){
+    Tpl::output('html_title', 'Contract List'); 
+    Tpl::output('header_title', 'Contract List'); 
+    Tpl::showPage('contract.list'); 
+  }
+
+  public function mortgageListOp(){
+    Tpl::output('html_title', 'Mortgage List'); 
+    Tpl::output('header_title', 'Mortgage List'); 
+    Tpl::showPage('mortgage.list'); 
+  }
+
+  public function addCreditRequestOp(){
+    $data['member_id'] = $_GET['id']; 
+    $data['token'] = cookie('token');
+    $url = ENTRY_API_SITE_URL . '/officer.get.member.assessment.php'; 
+    $rt = curl_post($url, $data); 
+    $rt = json_decode($rt, true); 
+    Tpl::output('data', $rt['DATA']); 
+    Tpl::output('html_title', 'Request for Credit'); 
+    Tpl::output('header_title', 'Request for Credit'); 
+    Tpl::showPage('credit.add'); 
+  }
+}

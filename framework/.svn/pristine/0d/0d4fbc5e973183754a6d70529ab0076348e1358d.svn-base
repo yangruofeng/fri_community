@@ -1,0 +1,53 @@
+<style>
+    #sidebar li .icon {
+        transition: all .25s ease;
+        -webkit-transition: all .25s ease;
+        -moz-transition: all .25s ease;
+        -ms-transition: all .25s ease;
+        -o-transition: all .25s ease;
+    }
+
+    #sidebar li.open .icon {
+        transform: rotate(90deg);
+        -webkit-transform: rotate(90deg);
+        -moz-transform: rotate(90deg);
+        -ms-transform: rotate(90deg);
+        -o-transform: rotate(90deg);
+        transition: all .25s ease;
+        -webkit-transition: all .25s ease;
+        -moz-transition: all .25s ease;
+        -ms-transition: all .25s ease;
+        -o-transition: all .25s ease;
+    }
+
+    #sidebar .submenu img {
+        width: 12px;
+        margin-top: -4px;
+    }
+</style>
+<div id="sidebar" style="OVERFLOW-Y: auto; OVERFLOW-X:hidden;">
+    <ul>
+        <?php foreach ($output['menu_items'] as $k_c => $s_item) { ?>
+            <li class="submenu">
+                <a href="#">
+                    <img src="<?php echo ENTRY_DESKTOP_SITE_URL . '/resource/img/icon-' . $k_c . '.png' ?>">
+<!--                    <i class="fa fa---><?php //echo $s_item['icon']?><!--"></i>-->
+                    <span><?php echo $s_item['title']?></span>
+                    <i class="icon fa fa-angle-right"></i>
+                </a>
+                <ul>
+                    <?php foreach ($s_item['child'] as $item) { $args = explode(',', $item['args']);?>
+                        <li>
+                            <a class="menu_a <?php echo $args[1] . '-' . $args[2] ?>" link="<?php
+                            echo getUrl($args[1], $args[2], array(), false, C('site_root'). DS . $args[0]); ?>">
+<!--                                <i class="icon icon-caret-right"></i>-->
+                                <span><?php echo $item['title']?></span>
+                            </a>
+                        </li>
+                    <?php } ?>
+                </ul>
+            </li>
+        <?php } ?>
+    </ul>
+</div>
+<!--sidebar-menu-->

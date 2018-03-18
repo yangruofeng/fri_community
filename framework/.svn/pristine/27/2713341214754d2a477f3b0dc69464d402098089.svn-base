@@ -1,0 +1,94 @@
+<?php
+
+class errorCodesEnum extends Enum
+{
+    const NO_ERROR = 200;  // 无任何错误
+    const SIGN_ERROR = 1001;  // 签名错误
+    const DATA_LACK = 1002; // 参数缺乏
+    const INVALID_PARAM = 1003;  // 非法参数
+    const INVALID_TOKEN = 1004;  // 非法token
+    const USER_EXIST = 1005;  // 用户已存在
+    const PHONE_USED = 1006;  // 电话已使用
+    const PHONE_VERIFIED = 1007; // 电话已验证
+    const SESSION_EXPIRED = 10001;  // session 过期
+    const DB_ERROR = 10002;
+    const UNEXPECTED_DATA = 10003; // 错误数据
+    const NOT_SUPPORTED = 10004;
+    const UNIMPLEMENTED = 10005;
+    const API_FAILED = 10006;
+    const NOT_PERMITTED = 10007;
+    const LOGIN_NULLIFIED  = 10008;
+    const DATA_INCONSISTENCY = 10009;   // 数据不一致
+    const DATA_DUPLICATED = 10010;  // 数据已经存在
+    const CONFIG_ERROR = 10012; // 配置错误
+
+
+}
+class globalOrderStateEnum extends Enum
+{
+    const ORDER_STATE_CANCEL= "0";  // 取消
+    const ORDER_STATE_CREATED = '1'; // 创建
+    const ORDER_STATE_PENDING_PAY= "10";  // 待支付
+    const ORDER_STATE_PAYING = '11';  // 正在支付
+    const ORDER_STATE_PAID= "20";  // 已支付
+    const ORDER_STATE_SUCCESS= "40";  // 完成
+}
+
+
+class memberSourceEnum extends Enum
+{
+    const ONLINE = 0;  // 网络
+    const CLIENT = 1;  // 柜台
+    const THIRD = 10;  // 第三方
+
+}
+
+class memberStateEnum extends Enum
+{
+    const CANCEL = 0;  // 注销
+    const CREATE = 1;  // 创建
+    const VERIFIED = 100;  // 已验证
+}
+
+class smsTaskType extends Enum{
+    const VERIFICATION_CODE="VerificationCode";
+    const PIN_CODE="PinCode";
+    const WALLET_CHANGED="WalletChanged";
+    const LUCKY_NOTICE = 'LuckyNotice';
+    const TOPUP_NOTICE = 'TopupNotice';
+}
+
+class smsTaskState extends Enum{
+    const NONE=0;
+    const CREATE = 1;
+    const SENDING=10;
+    const SEND_FAILED=11;
+    const SEND_SUCCESS=20;
+    const CANCEL=30;
+}
+
+
+class phoneCodeCDEnum extends Enum
+{
+    const CD = 60;  // 发送短信验证码的冷却时间(s)
+}
+
+class emailCoolTimeEnum extends Enum
+{
+    const CD = 60;
+}
+
+class loanProductStateEnum extends Enum
+{
+    const TEMP = 10;
+    const ACTIVE = 20;
+    const INACTIVE = 30;
+    const HISTORY = 40;
+}
+
+class objGuidTypeEnum extends Enum
+{
+    const CLIENT_MEMBER = 10;
+}
+
+

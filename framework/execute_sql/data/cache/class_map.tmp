@@ -1,0 +1,6 @@
+<?php
+$class_map=array (
+  'Enum' => 'core/Enum.php',
+  'indexControl' => 'execute_sql\\desktop/control/index.php',
+  'execute_sqlModel' => 'execute_sql/data/model/execute_sql.model.php',
+);

@@ -1,0 +1,171 @@
+<?php
+
+class baseControl extends control
+{
+    public $user_id;
+    public $user_name;
+    public $user_info;
+    public $auth_list;
+
+    function __construct()
+    {
+        parent::__construct();
+        Language::read('auth');
+        $user = userBase::Current();
+        $user_info = $user->property->toArray();
+        $this->user_info = $user_info;
+        $this->user_id = $user_info['uid'];
+        $this->user_name = $user_info['user_code'];
+
+        $this->auth_list = $user->getAuthList();
+    }
+
+    /**
+     * 根据权限获取menu
+     * @return array
+     */
+    protected function getResetMenu()
+    {
+        $index_menu = $this->getIndexMenu();
+        foreach ($index_menu as $key => $menu) {
+            foreach ($menu['child'] as $k => $child) {
+                $argc = explode(',', $child['args']);
+                $auth = $argc[1] . '_' . $argc[2];
+                if (!in_array($auth, $this->auth_list)) {
+                    unset($index_menu[$key]['child'][$k]);
+                }
+            }
+            if (empty($index_menu[$key]['child'])) {
+                unset($index_menu[$key]);
+            }
+        }
+        return $index_menu;
+    }
+
+    /**
+     * 定义menu
+     * @return array
+     */
+    private function getIndexMenu()
+    {
+        $indexMenu = array(
+            'home' => array(
+                "title" => "Home",
+                'child' => array(
+                    array('args' => 'microbank/backoffice,home,monitor', 'title' => 'Monitor')
+                )
+            ),
+            'user' => array(
+                "title" => 'Hr',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,user,branch', 'title' => 'Branch'),
+//                    array('args' => 'microbank/backoffice,user,department', 'title' => 'Department'),
+                    array('args' => 'microbank/backoffice,user,role', 'title' => 'Role'),
+                    array('args' => 'microbank/backoffice,user,user', 'title' => 'User'),
+                    array('args' => 'microbank/backoffice,user,log', 'title' => 'User Log'),
+                    array('args' => 'microbank/backoffice,user,pointEvent', 'title' => 'Point Event'),
+                    array('args' => 'microbank/backoffice,user,pointPeriod', 'title' => 'Point Period'),
+                    array('args' => 'microbank/backoffice,user,departmentPoint', 'title' => 'Department Point'),
+                )
+            ),
+            'client' => array(
+                "title" => 'Client',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,client,client', 'title' => 'Client'),
+                    array('args' => 'microbank/backoffice,client,cerification', 'title' => 'Certification File'),
+                    array('args' => 'microbank/backoffice,client,blackList', 'title' => 'Black List'),
+                    array('args' => 'microbank/backoffice,client,grade', 'title' => 'Grade'),
+                )
+            ),
+            'partner' => array(
+                "title" => 'Partner',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,partner,bank', 'title' => 'Bank'),
+                    array('args' => 'microbank/backoffice,partner,dealer', 'title' => 'Dealer'),
+                )
+            ),
+            'loan' => array(
+                "title" => 'Loan',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,loan,product', 'title' => 'Product'),
+                    array('args' => 'microbank/backoffice,loan,credit', 'title' => 'Grant Credit'),
+                    array('args' => 'microbank/backoffice,loan,approval', 'title' => 'Approval Credit'),
+                    array('args' => 'microbank/backoffice,loan,apply', 'title' => 'Request To Loan'),
+
+                    array('args' => 'microbank/backoffice,loan,requestToPrepayment', 'title' => 'Request To Prepayment'),
+                    array('args' => 'microbank/backoffice,loan,requestToRepayment', 'title' => 'Repayment'),
+                    array('args' => 'microbank/backoffice,loan,contract', 'title' => 'Contract'),
+                    array('args' => 'microbank/backoffice,loan,writeOff', 'title' => 'Write Off'),
+                    array('args' => 'microbank/backoffice,loan,overdue', 'title' => 'Overdue'),
+                    array('args' => 'microbank/backoffice,loan,deductingPenalties', 'title' => 'Deducting Penalties'),
+                )
+            ),
+            'insurance' => array(
+                "title" => 'Insurance',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,insurance,product', 'title' => 'Insurance Product'),
+                    array('args' => 'microbank/backoffice,insurance,contract', 'title' => 'Insurance Contract'),
+                )
+            ),
+            'setting' => array(
+                "title" => 'Setting',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,setting,companyInfo', 'title' => 'Company Info'),
+                    array('args' => 'microbank/backoffice,setting,creditLevel', 'title' => 'Credit Level'),
+                    array('args' => 'microbank/backoffice,setting,creditProcess', 'title' => 'Credit Process'),
+                    array('args' => 'microbank/backoffice,setting,global', 'title' => 'Global'),
+                    array('args' => 'microbank/backoffice,region,list', 'title' => 'Region'),
+//                    array('args' => 'microbank/backoffice,setting,systemDefine', 'title' => 'System Define'),
+                    array('args' => 'microbank/backoffice,setting,shortCode', 'title' => 'Short Code'),
+                    array('args' => 'microbank/backoffice,setting,codingRule', 'title' => 'Coding Rule'),
+                    array('args' => 'microbank/backoffice,setting,resetSystem', 'title' => 'Reset System'),
+
+                )
+            ),
+            'financial' => array(
+                "title" => 'Financial',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,financial,bankAccount', 'title' => 'Bank Account'),
+                    array('args' => 'microbank/backoffice,financial,exchangeRate', 'title' => 'Exchange Rate'),
+                )
+            ),
+            'report' => array(
+                "title" => 'Report',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,report,reportOverview', 'title' => 'Overview'),
+                    array('args' => 'microbank/backoffice,report,clientList', 'title' => 'Client List'),
+                    array('args' => 'microbank/backoffice,report,contractList', 'title' => 'Contract List'),
+                    array('args' => 'microbank/backoffice,report,creditList', 'title' => 'Credit List'),
+                    array('args' => 'microbank/backoffice,report,todayReport', 'title' => 'Today\'s Report'),
+                    array('args' => 'microbank/backoffice,report,loanList', 'title' => 'Loan List'),
+                    array('args' => 'microbank/backoffice,report,repaymentList', 'title' => 'Repayment List'),
+                    array('args' => 'microbank/backoffice,report,assetLiability', 'title' => 'Asset Liability'),
+                    array('args' => 'microbank/backoffice,report,profit', 'title' => 'Profit'),
+                )
+            ),
+            'editor' => array(
+                "title" => 'Editor',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,editor,help', 'title' => 'Cms')
+                )
+            ),
+            'tools' => array(
+                "title" => 'Tools',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,tools,calculator', 'title' => 'Calculator'),
+                    array('args' => 'microbank/backoffice,tools,sms', 'title' => 'SMS'),
+                )
+            ),
+            'dev' => array(
+                "title" => 'Dev',
+                'child' => array(
+                    array('args' => 'microbank/backoffice,dev,appVersion', 'title' => 'App Version'),
+                    array('args' => 'microbank/backoffice,dev,functionSwitch', 'title' => 'Function Switch'),
+                    array('args' => 'microbank/backoffice,dev,resetPassword', 'title' => 'Reset Password'),
+                )
+            )
+        );
+        return $indexMenu;
+    }
+
+}
