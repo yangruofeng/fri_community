@@ -48,6 +48,8 @@ $config['email_id'] = 'service@khbuy.com';
 $config['email_pass'] = 'Kh-20170614';
 $config['email_addr'] = 'service@khbuy.com';
 
+$config['weixin_token'] = 'yangruofeng';
+
 
 if (!@include(GLOBAL_ROOT . '/config.switch.override.tmp')) {
     $_switch_conf = "conf.local";
