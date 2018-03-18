@@ -10,6 +10,21 @@ class weixinControl
 
     public function helloOp()
     {
+
+        if( $_GET['echostr'] ){
+
+            $this->validOp();
+
+        }else{
+
+            $this->responseMsgOp();
+        }
+
+
+    }
+
+    public function validOp()
+    {
         $token = getConf('weixin_token');
         $params = $_GET;
         $signature = $params['signature'];
@@ -27,6 +42,10 @@ class weixinControl
         }else{
             echo 'OK';
         }
+    }
+
+    public function responseMsgOp()
+    {
 
     }
 }
