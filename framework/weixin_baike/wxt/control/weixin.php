@@ -46,6 +46,6 @@ class weixinControl
 
     public function responseMsgOp()
     {
-
+        wechatCallbackClass::responseMsg();
     }
 }
