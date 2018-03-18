@@ -23,6 +23,8 @@ $config['session'] = array(
     'save_path' => BASE_DATA_PATH.'/session'
 );
 
+$config['weixin_url_init'] = 0;
+
 $config['debug']=true;
 $config['site_root'] = 'http://www.iruofeng.cn/fri_community/framework';
 $config['global_resource_site_url'] = "http://www.iruofeng.cn/fri_community/framework/resource";
