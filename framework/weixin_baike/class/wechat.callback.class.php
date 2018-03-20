@@ -10,7 +10,8 @@ class wechatCallbackClass
 
     public static function responseMsg()
     {
-        $postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
+        //$postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
+        $postStr = file_get_contents('php://input');
 
         if( $postStr ){
 
