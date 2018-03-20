@@ -1,6 +1,5 @@
 <?php
 
-header('P3P: CP=CAO PSA OUR');//允许跨域设置cookie，貌似存在安全隐患
 
 define("InKHBuy", 1);
 define("CURRENT_ROOT",realpath(dirname(__FILE__)));

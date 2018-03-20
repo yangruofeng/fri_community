@@ -10,6 +10,9 @@ class weixinControl
 
     public function helloOp()
     {
+        ob_get_clean();  // 框架原因，必须添加
+        ob_clean();
+        ob_end_clean();//清除缓冲区,Bom头，避免乱码和不能识别的文件类型
 
         // http://www.iruofeng.cn/fri_community/framework/weixin_baike/wxt/index.php?act=weixin&op=hello
         if( $_GET['echostr'] ){
