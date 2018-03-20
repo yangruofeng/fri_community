@@ -10,8 +10,12 @@ class wechatCallbackClass
 
     public static function responseMsg()
     {
-        //$postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
-        $postStr = file_get_contents('php://input');
+
+        $postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
+        if( !$postStr ){
+            $postStr = file_get_contents('php://input');
+        }
+
 
         if( $postStr ){
 
@@ -41,6 +45,8 @@ class wechatCallbackClass
 
 
 
+        }else{
+            echo 'OK';die;
         }
     }
 
