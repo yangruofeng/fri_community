@@ -11,6 +11,7 @@ class weixinControl
     public function helloOp()
     {
 
+        // http://www.iruofeng.cn/fri_community/framework/weixin_baike/wxt/index.php?act=weixin&op=hello
         if( $_GET['echostr'] ){
 
             $this->validOp();
