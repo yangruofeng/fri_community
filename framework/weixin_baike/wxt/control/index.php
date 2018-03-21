@@ -11,4 +11,14 @@ class indexControl
     {
         echo 'OK';
     }
+
+    public function testOp()
+    {
+       $postStr = $GLOBALS["HTTP_RAW_POST_DATA"];
+        if( !$postStr ){
+            $postStr = file_get_contents('php://input');
+        }
+
+	echo $postStr;die;
+    }
 }

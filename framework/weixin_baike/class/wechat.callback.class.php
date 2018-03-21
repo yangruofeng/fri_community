@@ -15,8 +15,9 @@ class wechatCallbackClass
         if( !$postStr ){
             $postStr = file_get_contents('php://input');
         }
-
-        Logger::record('responseMsg',Now().'  '.$postStr."\n");
+       
+       //	file_put_contents(_LOG_.'/'.'WEIXIN-MSG-'.date('Y-m-d').'.xml',$result,FILE_APPEND);
+       // Logger::record('responseMsg',Now().'  '.$postStr."\n");
 
 
         if( $postStr ){

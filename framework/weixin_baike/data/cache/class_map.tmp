@@ -10,4 +10,5 @@ $class_map=array (
   'monitorClass' => 'microbank/class/monitor.class.php',
   'bank_apiControl' => 'microbank\\api/control/bank_api.php',
   'um_user_logModel' => 'microbank/data/model/um_user_log.model.php',
+  'wechat.callback.class' => 'weixin_baike/class/wechat.callback.class.php',
 );
