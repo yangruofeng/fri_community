@@ -1,4 +1,0 @@
-<link rel="stylesheet" type="text/css" href="<?php echo WAP_SITE_URL;?>/resource/css/inc_header.css?v=1">
-<header class="top-header" id="header">
-  <h2 class="title"><?php echo $output['header_title'];?></h2>
-</header>

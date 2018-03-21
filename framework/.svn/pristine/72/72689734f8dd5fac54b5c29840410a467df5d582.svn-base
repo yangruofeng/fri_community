@@ -1,6 +1,0 @@
-<?php
-$lang['verify_state_-1'] = 'In Review';
-$lang['verify_state_0'] = 'Create';
-$lang['verify_state_10'] = 'Pass';
-$lang['verify_state_11'] = 'Expired';
-$lang['verify_state_100'] = 'No Pass';
