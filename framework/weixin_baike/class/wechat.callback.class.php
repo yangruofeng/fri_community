@@ -16,7 +16,7 @@ class wechatCallbackClass
             $postStr = file_get_contents('php://input');
         }
       
-        
+
         if( $postStr ){
 
             $postObj = simplexml_load_string($postStr,'SimpleXMLElement',LIBXML_NOCDATA);
